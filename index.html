@@ -8,7 +8,7 @@
 body{font-size:15px;background:var(--bg);line-height:1.55}
 body.dark{--bg:#111315;--card:#1c2023;--ink:#f0f2f3;--muted:#aab0b5;--line:#343a3f;--accent:#d7dadd;--soft:#292e32;--shadow:0 8px 26px rgba(0,0,0,.18)}
 .wrap{max-width:1240px;padding:26px 24px 72px}
-header{position:relative;padding:8px 0 20px;border-bottom:1px solid var(--line)}
+header{position:relative;padding:8px 0 20px;border-bottom:0}
 h1{letter-spacing:-1.5px;font-size:clamp(28px,4vw,40px)}
 h2{font-size:clamp(23px,3vw,29px);letter-spacing:-.7px;margin:12px 0 4px}
 h3{letter-spacing:-.25px}
@@ -51,9 +51,9 @@ li{padding:2px 0 5px}
 @media(max-width:650px){.wrap{padding:17px 14px 45px}.nav{margin:0 -14px 20px;padding:10px 14px}.card{padding:18px}.poem summary{align-items:flex-start}.poem summary .pill{white-space:normal;text-align:right}.flash{min-height:230px}.nav{overflow-x:auto;flex-wrap:nowrap}.nav button{font-size:13px;padding:9px 12px}}
 
 #app{display:block}#page{min-width:0}.nav{display:flex!important;overflow-x:auto}.field{margin:10px 0 18px;min-height:48px}.auth .field{display:block;margin-bottom:18px}.board-row{padding:13px 0;border-bottom:1px solid var(--line)}.board-bar{height:13px;margin-top:9px;background:var(--soft);border-radius:99px}.board-bar span{border-radius:99px;transition:width .35s ease}.subject-card{min-height:220px}.subject-card .pill{width:max-content}.coming-card{border-style:dashed}.coming-card .pill{background:#fff0cc;color:#93600c;border:0}
-/* New soft midnight background; only the navigation bar gets a rounded container. */
-body.dark{background:radial-gradient(circle at 12% 12%,rgba(42,111,126,.22),transparent 30%),radial-gradient(circle at 88% 18%,rgba(70,83,151,.20),transparent 34%),radial-gradient(circle at 52% 92%,rgba(47,91,112,.16),transparent 40%),#101519;background-attachment:fixed}
-.nav{margin:0 0 26px;padding:12px 14px;border:1px solid rgba(255,255,255,.08);border-radius:24px;background:rgba(22,29,36,.72);backdrop-filter:blur(16px);border-bottom:1px solid rgba(255,255,255,.08)}
+/* Subtle midnight page background; a soft rounded surface only behind the navigation tabs. */
+body.dark{background:radial-gradient(circle at 15% 10%,rgba(47,69,112,.20),transparent 32%),radial-gradient(circle at 85% 20%,rgba(78,62,119,.16),transparent 34%),radial-gradient(circle at 50% 90%,rgba(39,57,91,.14),transparent 42%),#111315;background-attachment:fixed}
+.nav{margin:0 0 26px;padding:12px 14px;border:1px solid rgba(255,255,255,.07);border-radius:24px;background:rgba(30,36,44,.82);backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,.07)}
 @media(max-width:650px){.nav{margin:0 0 20px;padding:10px 12px}}
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
