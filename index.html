@@ -25,7 +25,7 @@ const poems=[
 ['Checking Out Me History','John Agard','Identity and place',[['Dem','Dialect / pronoun','The repeated word separates the speaker from those controlling history.','The speaker challenges imposed identity.']]],
 ['Exposure','Wilfred Owen','Victims and effects of war',[['black with snow','Colour imagery','The hostile landscape makes nature feel threatening and bleak.','The weather becomes an enemy to soldiers.'],['cringe in holes','Verb / imagery','The soldiers are reduced to fearful, vulnerable figures.','War strips away comfort and dignity.']]],
 ['Ozymandias','Percy Bysshe Shelley','Power and control',[['sunk ... shattered visage','Visual imagery','The broken statue symbolises the collapse of the ruler’s power.','Time destroys human pride.'],['King of Kings','Irony / allusion','The boast is contradicted by the ruined statue and empty desert.','Power cannot defeat time.']]]
-;
+];
 const escape=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 async function refresh(){const {data}=await supabase.auth.getUser();user=data.user||null;$('auth').classList.toggle('hidden',!!user);$('app').classList.toggle('hidden',!user);$('logout').classList.toggle('hidden',!user);if(user){let r=await supabase.from('profiles').select('*').eq('id',user.id).maybeSingle();profile=r.data;$('who').textContent=profile?.username||user.email;render()}}
 function say(id,msg){$(id).textContent=msg}
