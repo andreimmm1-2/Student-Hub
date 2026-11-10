@@ -1377,6 +1377,26 @@ body.activity-session #reviseArea .practice-achievement-unlock{margin:8px auto;p
 body.dark.activity-session #reviseArea .practice-achievement-unlock{color:#b7d4ee;background:rgba(80,130,175,.12)}
 
 
+
+/* Consistent custom select controls */
+.custom-select-host{position:relative;display:inline-block;width:100%;min-width:0;vertical-align:middle}
+.custom-select-native{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;opacity:0!important;pointer-events:none!important}
+.custom-select-trigger{width:100%;min-height:44px;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;border:1px solid var(--line);border-radius:13px;background:var(--glass-strong);color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer;transition:border-color .18s,box-shadow .18s,background .18s}
+.custom-select-trigger:hover{border-color:var(--accent)}
+.custom-select-trigger:focus-visible{outline:3px solid color-mix(in srgb,var(--accent) 30%,transparent);outline-offset:2px}
+.custom-select-trigger:disabled{opacity:.55;cursor:not-allowed}
+.custom-select-trigger .custom-select-value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.custom-select-chevron{width:8px;height:8px;flex:0 0 8px;border-right:1.8px solid currentColor;border-bottom:1.8px solid currentColor;transform:rotate(45deg) translateY(-2px);opacity:.65;transition:transform .18s}
+.custom-select-trigger[aria-expanded="true"] .custom-select-chevron{transform:rotate(225deg) translate(-1px,-1px)}
+.custom-select-menu{position:fixed;z-index:10000;min-width:180px;max-width:min(360px,calc(100vw - 24px));max-height:min(320px,calc(100dvh - 24px));overflow:auto;padding:6px;border:1px solid var(--line);border-radius:14px;background:var(--card,var(--glass-strong));color:var(--ink);box-shadow:0 16px 42px rgba(15,23,42,.2);overscroll-behavior:contain}
+.custom-select-option{display:flex;width:100%;align-items:center;gap:10px;padding:10px 11px;border:0;border-radius:9px;background:transparent;color:inherit;font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.custom-select-option:hover,.custom-select-option[aria-selected="true"]{background:var(--soft)}
+.custom-select-option[aria-selected="true"]{font-weight:750}
+.custom-select-option:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.custom-select-option:disabled{opacity:.45;cursor:not-allowed}
+.custom-select-check{margin-left:auto;color:var(--accent);font-weight:800}
+body.dark .custom-select-menu{box-shadow:0 18px 48px rgba(0,0,0,.45)}
+@media(max-width:600px){.custom-select-trigger{min-height:46px}.custom-select-menu{max-width:calc(100vw - 20px)}}
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
@@ -2066,4 +2086,76 @@ async function loadAnnouncements(){const r=await supabase.from('announcements').
 async function loadAdmin(){const [pr,sr,ur,ar]=await Promise.all([supabase.from('profiles').select('id,username,display_name').order('username'),supabase.from('study_sessions').select('user_id,activity,score,duration_seconds,created_at').order('created_at',{ascending:false}).limit(500),supabase.from('user_presence').select('user_id,last_seen,current_page,study_status,session_started_at'),supabase.from('admin_users').select('user_id')]);if(pr.error){$('adminUsers').textContent=pr.error.message;return}const presence=Object.fromEntries((ur.data||[]).map(x=>[x.user_id,x])),admins=new Set((ar.data||[]).map(x=>x.user_id)),stats={};(sr.data||[]).forEach(x=>{stats[x.user_id]??={seconds:0,points:0};stats[x.user_id].seconds+=Number(x.duration_seconds||0);stats[x.user_id].points+=Number(x.score||0)});$('adminAccess').innerHTML='<select id="adminPerson" class="field">'+(pr.data||[]).map(x=>'<option value="'+x.id+'">'+escape(x.display_name||x.username)+' (@'+escape(x.username)+')'+(admins.has(x.id)?' · Admin':'')+'</option>').join('')+'</select><div class="row"><button id="grantAdmin" class="primary">Make admin</button><button id="removeAdmin">Remove admin</button></div><p id="adminAccessMsg"></p>';$('grantAdmin').onclick=async()=>{let r=await supabase.from('admin_users').insert({user_id:$('adminPerson').value});$('adminAccessMsg').textContent=r.error?(r.error.code==='23505'?'Already an admin.':r.error.message):'Admin access granted.';loadAdmin()};$('removeAdmin').onclick=async()=>{let id=$('adminPerson').value;if(id===user.id&&admins.size<=1){$('adminAccessMsg').textContent='Cannot remove the last admin.';return}let r=await supabase.from('admin_users').delete().eq('user_id',id);$('adminAccessMsg').textContent=r.error?r.error.message:'Admin access removed.';loadAdmin()};$('publishAnnouncement').onclick=async()=>{let title=$('announcementTitle').value.trim(),body=$('announcementBody').value.trim();if(!title||!body){$('announcementMsg').textContent='Enter a title and message.';return}let r=await supabase.from('announcements').insert({title,body,created_by:user.id});$('announcementMsg').textContent=r.error?r.error.message:'Announcement published.';if(!r.error){$('announcementTitle').value='';$('announcementBody').value=''}};$('adminUsers').innerHTML=(pr.data||[]).map(x=>{let p=presence[x.id],st=stats[x.id]||{seconds:0,points:0},online=p&&Date.now()-new Date(p.last_seen).getTime()<90000;return '<div class="feedback"><b>'+escape(x.username)+'</b> '+(admins.has(x.id)?'<span class="pill">ADMIN</span>':'')+' · '+(online?'Online':'Offline')+'<p>'+escape(p?.study_status||'offline')+' · '+escape(p?.current_page||'—')+' · Quiz time '+Math.round(st.seconds/60)+' min · Points '+st.points+'</p><input class="field" id="rename-'+x.id+'" value="'+escape(x.display_name||x.username)+'"><button data-rename="'+x.id+'">Save display name</button></div>'}).join('');$('adminUsers').onclick=async e=>{let id=e.target.dataset.rename;if(!id)return;let r=await supabase.from('profiles').update({display_name:$('rename-'+id).value.trim()}).eq('id',id);if(r.error)alert(r.error.message);else loadAdmin()}}
 async function startPresence(){if(!user?.id)return;if(window.rcPresenceTimer)clearInterval(window.rcPresenceTimer);const uid=user.id,sessionStart=new Date().toISOString();const send=async()=>{if(!user?.id||user.id!==uid)return;const {error}=await supabase.from('user_presence').upsert({user_id:uid,last_seen:new Date().toISOString(),current_page:page,study_status:['revise','poem'].includes(page)?'studying':'online',session_started_at:sessionStart},{onConflict:'user_id'});if(error)console.warn('Presence update failed:',error.message)};await send();window.rcPresenceTimer=setInterval(send,30000)}
 supabase.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
+
+/* Native select data remains the source of truth; custom menus provide the UI. */
+(()=>{
+ const openMenus=new Set();
+ let typeTimer=null,typeText='';
+ function optionsFor(select){return [...select.options].map((o,i)=>({value:o.value,label:o.textContent.trim(),disabled:o.disabled,selected:i===select.selectedIndex,index:i}))}
+ function sync(select){
+  const host=select.closest('.custom-select-host');if(!host)return;
+  const trigger=host.querySelector('.custom-select-trigger'),value=trigger?.querySelector('.custom-select-value');
+  if(value)value.textContent=select.selectedOptions[0]?.textContent.trim()||'Choose an option';
+  if(trigger){trigger.disabled=select.disabled;trigger.setAttribute('aria-label',select.getAttribute('aria-label')||select.closest('label')?.childNodes[0]?.textContent?.trim()||'Choose an option')}
+  const menu=host.querySelector('.custom-select-menu');if(menu)renderOptions(select,menu);
+ }
+ function renderOptions(select,menu){
+  menu.innerHTML='';
+  optionsFor(select).forEach(o=>{
+   const b=document.createElement('button');b.type='button';b.className='custom-select-option';b.disabled=o.disabled;b.setAttribute('role','option');b.setAttribute('aria-selected',String(o.selected));b.dataset.value=o.value;
+   const label=document.createElement('span');label.textContent=o.label;b.append(label);
+   if(o.selected){const check=document.createElement('span');check.className='custom-select-check';check.textContent='✓';check.setAttribute('aria-hidden','true');b.append(check)}
+   b.addEventListener('click',()=>{select.value=o.value;select.dispatchEvent(new Event('change',{bubbles:true}));close(hostFor(select));select.closest('.custom-select-host')?.querySelector('.custom-select-trigger')?.focus()});
+   menu.append(b);
+  });
+ }
+ function hostFor(select){return select.closest('.custom-select-host')}
+ function position(host){
+  const trigger=host.querySelector('.custom-select-trigger'),menu=host.querySelector('.custom-select-menu');if(!trigger||!menu)return;
+  const r=trigger.getBoundingClientRect(),gap=6,roomBelow=innerHeight-r.bottom-gap,roomAbove=r.top-gap;
+  const max=Math.min(320,Math.max(120,Math.max(roomBelow,roomAbove)-8));
+  menu.style.maxHeight=max+'px';menu.style.minWidth=Math.min(Math.max(r.width,180),innerWidth-24)+'px';
+  const height=Math.min(menu.scrollHeight,max),above=roomBelow<Math.min(220,menu.scrollHeight)&&roomAbove>roomBelow;
+  menu.style.left=Math.max(10,Math.min(r.left,innerWidth-menu.offsetWidth-10))+'px';
+  menu.style.top=(above?Math.max(10,r.top-gap-height):Math.min(innerHeight-height-10,r.bottom+gap))+'px';
+ }
+ function close(host,focus=false){
+  if(!host)return;const trigger=host.querySelector('.custom-select-trigger'),menu=host.querySelector('.custom-select-menu');
+  trigger?.setAttribute('aria-expanded','false');menu?.remove();openMenus.delete(host);if(focus)trigger?.focus();
+ }
+ function open(host){
+  const select=host.querySelector('select'),trigger=host.querySelector('.custom-select-trigger');if(!select||select.disabled)return;
+  [...openMenus].forEach(h=>close(h));const menu=document.createElement('div');menu.className='custom-select-menu';menu.setAttribute('role','listbox');menu.id=host.dataset.menuId;
+  renderOptions(select,menu);document.body.append(menu);host.append(menu);trigger.setAttribute('aria-expanded','true');openMenus.add(host);position(host);
+  const active=menu.querySelector('[aria-selected="true"]:not(:disabled)')||menu.querySelector('button:not(:disabled)');active?.focus();
+ }
+ function enhance(select){
+  if(select.dataset.customized==='true'||!select.parentNode)return;
+  const host=document.createElement('span');host.className='custom-select-host';host.dataset.menuId='custom-menu-'+Math.random().toString(36).slice(2);
+  select.parentNode.insertBefore(host,select);host.append(select);select.classList.add('custom-select-native');select.dataset.customized='true';select.tabIndex=-1;select.setAttribute('aria-hidden','true');
+  const trigger=document.createElement('button');trigger.type='button';trigger.className='custom-select-trigger';trigger.setAttribute('aria-haspopup','listbox');trigger.setAttribute('aria-expanded','false');trigger.setAttribute('aria-controls',host.dataset.menuId);
+  const value=document.createElement('span');value.className='custom-select-value';const chevron=document.createElement('span');chevron.className='custom-select-chevron';chevron.setAttribute('aria-hidden','true');trigger.append(value,chevron);host.append(trigger);
+  trigger.addEventListener('click',()=>openMenus.has(host)?close(host):open(host));
+  trigger.addEventListener('keydown',e=>{
+   if(['ArrowDown','ArrowUp','Enter',' '].includes(e.key)){e.preventDefault();open(host)}
+  });
+  select.addEventListener('change',()=>sync(select));sync(select);
+ }
+ document.addEventListener('click',e=>{for(const h of [...openMenus])if(!h.contains(e.target)&&!h.querySelector('.custom-select-menu')?.contains(e.target))close(h)});
+ document.addEventListener('keydown',e=>{
+  const host=[...openMenus].find(h=>h.querySelector('.custom-select-menu')?.contains(document.activeElement));if(!host)return;
+  const menu=host.querySelector('.custom-select-menu'),items=[...menu.querySelectorAll('button:not(:disabled)')],i=items.indexOf(document.activeElement);
+  if(e.key==='Escape'){e.preventDefault();close(host,true)}
+  else if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();items[Math.max(0,Math.min(items.length-1,i+(e.key==='ArrowDown'?1:-1))) ]?.focus()}
+  else if(e.key==='Home'){e.preventDefault();items[0]?.focus()}
+  else if(e.key==='End'){e.preventDefault();items.at(-1)?.focus()}
+  else if(e.key==='Tab')close(host);
+  else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){typeText+=e.key.toLowerCase();clearTimeout(typeTimer);typeTimer=setTimeout(()=>typeText='',650);const found=items.find(b=>b.textContent.trim().toLowerCase().startsWith(typeText));found?.focus()}
+ });
+ const scan=root=>{if(root.matches?.('select'))enhance(root);root.querySelectorAll?.('select').forEach(enhance)};
+ const observer=new MutationObserver(records=>records.forEach(rec=>rec.addedNodes.forEach(n=>{if(n.nodeType===1)scan(n)})));
+ document.addEventListener('DOMContentLoaded',()=>{scan(document);observer.observe(document.body,{childList:true,subtree:true})});
+ if(document.readyState!=='loading'){scan(document);observer.observe(document.body,{childList:true,subtree:true})}
+ window.addEventListener('resize',()=>openMenus.forEach(position));window.addEventListener('scroll',()=>openMenus.forEach(position),true);
+})();
 </script></body></html>
