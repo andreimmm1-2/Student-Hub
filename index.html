@@ -1229,6 +1229,150 @@ function practiceBlurting(){
  }
  renderWrite();
 }
+
+function practiceMindMaps(){
+ const started=Date.now();
+ let mapId=null,mapTitle='My revision map',mapTopic=poems[0]?.[0]||'Power & Conflict',mapTheme='blue';
+ let nodes=[],edges=[],connectFrom=null,nodeCounter=0;
+ const themes={blue:'#315f91',teal:'#187b70',amber:'#a56b35',slate:'#4c5966'};
+ function makeNode(label,detail,x,y,color){
+  nodeCounter++;return {id:'node-'+nodeCounter,label:label||'New branch',detail:detail||'',x,y,color:color||'blue'};
+ }
+ function createNodes(method,poemName){
+  const p=poems.find(x=>x[0]===poemName)||poems[0];
+  const center=makeNode(p[0]+' · central idea',p[2]||'Core themes and the writer’s message',43,39,'slate');
+  let generated=[];
+  if(method==='blank')generated=[];
+  else if(method==='template'){
+   generated=[
+    makeNode('Themes','Which ideas run through the poem?',12,12,'blue'),
+    makeNode('Evidence','Key quotations and precise words',67,12,'teal'),
+    makeNode('Methods','Language, form and structure',10,66,'amber'),
+    makeNode('Analysis','Effect on the reader and deeper meaning',68,66,'blue'),
+    makeNode('Context','Relevant situation and wider ideas',40,82,'slate')
+   ];
+  }else{
+   generated=(p[3]||[]).slice(0,5).map((x,i)=>makeNode(x[1]||'Quotation '+(i+1),x[0]+' · '+String(x[2]||'').slice(0,130),[9,69,12,68,39][i],[12,12,69,69,83][i],['blue','teal','amber','blue','slate'][i]));
+  }
+  nodes=[center,...generated];edges=generated.map(n=>({from:center.id,to:n.id}));connectFrom=null;mapId=null;mapTitle=method==='poem'?'Map · '+p[0]:'My revision map';mapTopic=p[0];
+ }
+ async function loadSaved(){
+  const r=await supabase.from('practice_saved_maps').select('id,title,topic,map_data,updated_at').eq('user_id',user.id).order('updated_at',{ascending:false}).limit(30);
+  return {rows:r.data||[],error:r.error?.message||''};
+ }
+ function renderHome(savedRows,error){
+  practiceMount(practiceHeader('Mind Maps','Choose a starting point, then build and save your own connected revision map.')+
+   '<section class="map-home"><div class="map-home-intro"><span class="rev-kicker">CREATE A MAP</span><h2>How do you want to start?</h2><p>Start with a blank canvas, use a revision structure or build from a poem’s existing knowledge.</p></div>'+
+   '<div class="map-create-grid"><button data-map-create="blank"><span>01 · OPEN CANVAS</span><b>Start blank</b><small>Build every branch yourself.</small></button><button data-map-create="template"><span>02 · GUIDED STRUCTURE</span><b>Use a template</b><small>Begin with themes, evidence, methods, analysis and context.</small></button><button data-map-create="poem"><span>03 · BUILD FROM KNOWLEDGE</span><b>Generate from a poem</b><small>Use saved quotations and notes as your starting branches.</small></button></div>'+
+   '<div class="map-home-controls"><label>Poem<select id="mapHomeTopic" class="field">'+poems.map(p=>'<option value="'+practiceSafe(p[0])+'" '+(p[0]===mapTopic?'selected':'')+'>'+practiceSafe(p[0])+'</option>').join('')+'</select></label><label>Map name<input id="mapHomeTitle" class="field" value="'+practiceSafe(mapTitle)+'" maxlength="80"></label></div>'+
+   '<div class="map-saved-section"><div class="map-saved-heading"><div><span class="rev-kicker">YOUR LIBRARY</span><h2>Saved maps</h2></div><span>'+savedRows.length+' saved</span></div>'+(error?'<p class="form-error">'+practiceSafe(error)+'</p>':'')+
+   (savedRows.length?savedRows.map(m=>'<article class="map-saved-row"><div><b>'+practiceSafe(m.title)+'</b><span>'+practiceSafe(m.topic||'Power & Conflict')+' · Updated '+new Date(m.updated_at).toLocaleDateString()+'</span></div><button data-map-open="'+m.id+'">Open map</button><button data-map-delete="'+m.id+'" class="quiet-danger">Delete</button></article>').join(''):'<p class="muted">Your saved maps will appear here. You can return to them and continue editing later.</p>')+'</div></section>');
+  areaMapHomeBind(savedRows);
+ }
+ function areaMapHomeBind(savedRows){
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-map-create]').forEach(b=>b.onclick=()=>{
+   mapTopic=$('mapHomeTopic').value;mapTitle=$('mapHomeTitle').value.trim()||'My revision map';
+   createNodes(b.dataset.mapCreate,mapTopic);renderEditor();
+  });
+  area.querySelectorAll('[data-map-open]').forEach(b=>b.onclick=()=>{
+   const m=savedRows.find(x=>x.id===b.dataset.mapOpen);if(!m)return;
+   let data=m.map_data||{};if(typeof data==='string'){try{data=JSON.parse(data)}catch{data={}}}
+   mapId=m.id;mapTitle=m.title||'Untitled map';mapTopic=m.topic||'';mapTheme=data.theme||'blue';
+   nodes=Array.isArray(data.nodes)?data.nodes:[];edges=Array.isArray(data.edges)?data.edges:[];
+   nodeCounter=nodes.length;nodes=nodes.map((n,i)=>({...n,id:String(n.id||'node-'+(i+1)),x:Number(n.x??45),y:Number(n.y??30),color:themes[n.color]?n.color:'blue'}));
+   renderEditor();
+  });
+  area.querySelectorAll('[data-map-delete]').forEach(b=>b.onclick=async()=>{
+   if(!confirm('Delete this saved map? This cannot be undone.'))return;
+   b.disabled=true;const r=await supabase.from('practice_saved_maps').delete().eq('id',b.dataset.mapDelete).eq('user_id',user.id);
+   if(r.error){b.disabled=false;alert('Map could not be deleted: '+r.error.message);return}
+   const latest=await loadSaved();renderHome(latest.rows,latest.error);
+  });
+ }
+ function edgeMarkup(){
+  return edges.map(e=>{const a=nodes.find(n=>n.id===e.from),b=nodes.find(n=>n.id===e.to);if(!a||!b)return '';return '<line x1="'+(Number(a.x)*10+90)+'" y1="'+(Number(a.y)*6.2+35)+'" x2="'+(Number(b.x)*10+90)+'" y2="'+(Number(b.y)*6.2+35)+'" stroke="var(--map-line)" stroke-width="2.2" stroke-linecap="round" />'}).join('');
+ }
+ function renderEditor(){
+  connectFrom=null;
+  const nodeHtml=nodes.map(n=>'<article class="map-node map-node-'+practiceSafe(n.color)+'" data-map-node="'+practiceSafe(n.id)+'" style="left:'+n.x+'%;top:'+n.y+'%"><div class="map-node-head"><button class="map-drag-handle" data-map-drag="'+practiceSafe(n.id)+'" aria-label="Drag branch to reposition">MOVE</button><button class="map-connect '+(edges.some(e=>e.from===n.id||e.to===n.id)?'connected':'')+'" data-map-connect="'+practiceSafe(n.id)+'">Connect</button></div><input class="map-node-title" data-map-field="label" data-map-id="'+practiceSafe(n.id)+'" value="'+practiceSafe(n.label)+'" aria-label="Branch title"><textarea data-map-field="detail" data-map-id="'+practiceSafe(n.id)+'" rows="2" placeholder="Add explanation, quotations or examples">'+practiceSafe(n.detail)+'</textarea><div class="map-node-foot"><select data-map-colour="'+practiceSafe(n.id)+'" aria-label="Branch colour">'+Object.keys(themes).map(k=>'<option value="'+k+'" '+(k===n.color?'selected':'')+'>'+k+'</option>').join('')+'</select><button data-map-remove="'+practiceSafe(n.id)+'" class="quiet-danger">Remove</button></div></article>').join('');
+  practiceMount(practiceHeader('Mind Map editor','Move branches, write your own notes and connect ideas. Your map can be saved and reopened.')+
+   '<section class="map-editor"><div class="map-editor-toolbar"><div class="map-editor-name"><label>MAP NAME<input id="mapEditorTitle" class="field" value="'+practiceSafe(mapTitle)+'" maxlength="80"></label><span class="map-topic-label">'+practiceSafe(mapTopic)+'</span></div><div class="map-editor-actions"><button id="mapAddNode">Add branch +</button><button id="mapChallenge">Memory challenge</button><button id="mapSave" class="primary">Save map</button></div></div>'+
+   '<div class="map-editor-hint" id="mapHint">Drag branches by their MOVE handle. Select Connect on two branches to draw a link between them.</div>'+
+   '<div id="mapCanvas" class="map-canvas"><svg class="map-connections" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">'+edgeMarkup()+'</svg>'+nodeHtml+'</div><p id="mapSaveMessage" aria-live="polite"></p><div class="map-editor-bottom"><button id="mapBack">Back to saved maps</button><span>'+nodes.length+' branches · '+edges.length+' connections</span></div></section>');
+  $('mapEditorTitle').oninput=()=>{mapTitle=$('mapEditorTitle').value};
+  $('mapAddNode').onclick=()=>{
+   const n=nodes.length,cols=[8,69,8,69,38],rows=[16,16,68,68,82];
+   const node=makeNode('New branch','',cols[n%5],rows[n%5],['blue','teal','amber','slate'][n%4]);
+   nodes.push(node);edges.push({from:nodes[0].id,to:node.id});renderEditor();
+  };
+  $('mapChallenge').onclick=renderMapChallenge;
+  $('mapSave').onclick=saveMap;
+  $('mapBack').onclick=async()=>{const r=await loadSaved();renderHome(r.rows,r.error)};
+  area.querySelectorAll('[data-map-field]').forEach(el=>el.addEventListener('input',()=>{
+   const node=nodes.find(n=>n.id===el.dataset.mapId);if(node)node[el.dataset.mapField]=el.value;
+  }));
+  area.querySelectorAll('[data-map-colour]').forEach(el=>el.onchange=()=>{
+   const n=nodes.find(x=>x.id===el.dataset.mapColour);if(n){n.color=el.value;renderEditor()}
+  });
+  area.querySelectorAll('[data-map-remove]').forEach(b=>b.onclick=()=>{
+   nodes=nodes.filter(n=>n.id!==b.dataset.mapRemove);edges=edges.filter(e=>e.from!==b.dataset.mapRemove&&e.to!==b.dataset.mapRemove);renderEditor();
+  });
+  area.querySelectorAll('[data-map-connect]').forEach(b=>b.onclick=()=>{
+   const id=b.dataset.mapConnect;
+   if(!connectFrom){connectFrom=id;$('mapHint').textContent='Now select the branch you want to connect to.';b.classList.add('selected');return}
+   if(connectFrom===id){connectFrom=null;$('mapHint').textContent='Connection cancelled. Select Connect on a branch to begin.';return}
+   if(!edges.some(e=>(e.from===connectFrom&&e.to===id)||(e.from===id&&e.to===connectFrom)))edges.push({from:connectFrom,to:id});
+   connectFrom=null;renderEditor();
+  });
+  bindMapDrag();
+ }
+ function bindMapDrag(){
+  const canvas=$('mapCanvas');
+  canvas.querySelectorAll('[data-map-drag]').forEach(handle=>handle.onpointerdown=e=>{
+   e.preventDefault();const id=handle.dataset.mapDrag,node=nodes.find(n=>n.id===id);if(!node)return;
+   const rect=canvas.getBoundingClientRect(),startX=e.clientX,startY=e.clientY,origX=node.x,origY=node.y;
+   handle.setPointerCapture?.(e.pointerId);
+   const move=ev=>{
+    node.x=Math.max(3,Math.min(88,origX+(ev.clientX-startX)/rect.width*100));
+    node.y=Math.max(3,Math.min(78,origY+(ev.clientY-startY)/rect.height*100));
+    const el=canvas.querySelector('[data-map-node="'+id+'"]');if(el){el.style.left=node.x+'%';el.style.top=node.y+'%'}
+    const svg=canvas.querySelector('svg');if(svg)svg.innerHTML=edgeMarkup();
+   };
+   const end=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);handle.removeEventListener('pointercancel',end);const svg=canvas.querySelector('svg');if(svg)svg.innerHTML=edgeMarkup()};
+   handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
+  });
+ }
+ async function saveMap(){
+  mapTitle=$('mapEditorTitle').value.trim()||'Untitled map';
+  const data={nodes,edges,theme:mapTheme};
+  const payload={user_id:user.id,title:mapTitle,subject_id:'english-lit',topic:mapTopic,map_data:data,updated_at:new Date().toISOString()};
+  let r;
+  if(mapId)r=await supabase.from('practice_saved_maps').update({title:payload.title,topic:payload.topic,map_data:payload.map_data,updated_at:payload.updated_at}).eq('id',mapId).eq('user_id',user.id).select('id').maybeSingle();
+  else r=await supabase.from('practice_saved_maps').insert(payload).select('id').single();
+  if(r.error){$('mapSaveMessage').textContent='Could not save your map: '+r.error.message;return}
+  if(!mapId){mapId=r.data.id;const xp=await recordPracticeSession('mind-map',1800,Math.round((Date.now()-started)/1000),mapTopic,100,{total_questions:nodes.length,correct_answers:nodes.length,map_created:true});$('mapSaveMessage').textContent='Map saved to your account · '+(xp?'+'+Number(xp.xp_earned||1800).toLocaleString()+' XP earned':'XP could not be confirmed.')}
+  else $('mapSaveMessage').textContent='Your changes have been saved. You can reopen this map from Mind Maps.';
+ }
+ function renderMapChallenge(){
+  const branches=nodes.filter((n,i)=>i>0||nodes.length===1);
+  practiceMount(practiceHeader('Mind map memory challenge','Rebuild the structure from memory before revealing the original branches.')+
+   '<section class="map-challenge-screen"><span class="rev-kicker">RECALL WITHOUT LOOKING</span><h2>'+practiceSafe(mapTitle)+'</h2><p>Write what belongs in each hidden branch, then reveal the saved map and self-assess.</p>'+
+   branches.map((n,i)=>'<article class="map-memory-item"><span class="map-memory-index">BRANCH '+(i+1)+'</span><textarea class="field" rows="2" data-map-memory="'+i+'" placeholder="What was this branch about?"></textarea><label><input type="checkbox" data-map-memory-check="'+i+'"> I recalled this branch accurately</label><button data-map-memory-reveal="'+i+'">Reveal branch</button><p class="hidden" id="mapMemoryModel'+i+'"><b>'+practiceSafe(n.label)+'</b> · '+practiceSafe(n.detail)+'</p></article>').join('')+
+   '<div class="map-memory-actions"><button id="mapChallengeBack">Back to editor</button><button class="primary" id="mapChallengeFinish">Finish challenge</button></div></section>');
+  area.querySelectorAll('[data-map-memory-reveal]').forEach(b=>b.onclick=()=>{$('mapMemoryModel'+b.dataset.mapMemoryReveal).classList.toggle('hidden');b.textContent=b.textContent==='Reveal branch'?'Hide branch':'Reveal branch'});
+  $('mapChallengeBack').onclick=renderEditor;
+  $('mapChallengeFinish').onclick=async()=>{
+   const correct=area.querySelectorAll('[data-map-memory-check]:checked').length,accuracy=branches.length?Math.round(correct/branches.length*100):100;
+   const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Recalled</span></div><div><b>'+Math.max(0,branches.length-correct)+'</b><span>To revisit</span></div><div><b>'+accuracy+'%</b><span>Recall score</span></div></div><div class="practice-result-columns"><section><h3>Secure branches</h3><p>'+correct+' branch(es) marked secure.</p></section><section><h3>Review next</h3><p>'+(branches.length-correct)+' branch(es) to rebuild.</p></section></div>';
+   await practiceAward('mind-maps',correct,mapTopic,accuracy,{total_questions:branches.length,correct_answers:correct,challenge:true},'Mind map recall',correct+' of '+branches.length+' branches recalled',detail,started,practiceMindMaps);
+  };
+ }
+ async function renderHomeFromDb(){
+  const result=await loadSaved();renderHome(result.rows,result.error);
+ }
+ renderHomeFromDb();
+}
 async function setupFriends(){$('findfriend').onclick=async()=>{let name=$('friendname').value.trim().toLowerCase();if(!name)return;let r=await supabase.from('profiles').select('id,username').eq('username',name).maybeSingle();if(r.error||!r.data)return say('friendmsg','No matching username found.');if(r.data.id===user.id)return say('friendmsg','That is your own account.');let prior=await supabase.from('friend_requests').select('id,status').eq('sender_id',user.id).eq('receiver_id',r.data.id).maybeSingle();if(prior.data)return say('friendmsg',prior.data.status==='accepted'?'You are already friends.':'A request has already been sent to this user.');let ins=await supabase.from('friend_requests').insert({sender_id:user.id,receiver_id:r.data.id});say('friendmsg',ins.error?(ins.error.code==='23505'?'A request already exists between these accounts.':ins.error.message):'Friend request sent to '+r.data.username+'.')};let r=await supabase.from('friend_requests').select('id,sender_id,status').eq('receiver_id',user.id).eq('status','pending');const ids=(r.data||[]).map(x=>x.sender_id);let profileRows=[];if(ids.length){const pr=await supabase.from('profiles').select('id,username').in('id',ids);profileRows=pr.data||[]}const names=Object.fromEntries(profileRows.map(x=>[x.id,x.username]));$('requests').innerHTML=(r.data||[]).map(x=>'<div class="row"><b>'+escape(names[x.sender_id]||'Student')+'</b><button data-accept="'+x.id+'">Accept</button><button data-decline="'+x.id+'">Decline</button></div>').join('')||'No pending requests.';$('requests').onclick=async e=>{let id=e.target.dataset.accept||e.target.dataset.decline;if(!id)return;await supabase.from('friend_requests').update({status:e.target.dataset.accept?'accepted':'declined'}).eq('id',id);setupFriends()};$('newchallenge').onclick=async()=>{let r=await supabase.from('challenges').insert({creator_id:user.id,title:'Power & Conflict duel',subject_id:'english-lit',mode:'quote-race'}).select().single();if(r.error){say('challengemsg',r.error.message);return}const join=await supabase.from('challenge_players').insert({challenge_id:r.data.id,user_id:user.id});say('challengemsg',join.error?'Duel created, but joining failed: '+join.error.message:'Duel created. Share its ID with a friend: '+r.data.id);loadChallenges()};loadChallenges()}
 async function loadChallenges(){const el=$('challengeList');if(!el)return;const [cr,pr]=await Promise.all([supabase.from('challenges').select('id,title,creator_id,status,created_at').in('status',['open','active']).order('created_at',{ascending:false}).limit(30),supabase.from('challenge_players').select('challenge_id,user_id,score')]);if(cr.error){el.textContent=cr.error.message;return}const players=pr.data||[];el.innerHTML=(cr.data||[]).map(c=>{const joined=players.some(x=>x.challenge_id===c.id&&x.user_id===user.id),count=players.filter(x=>x.challenge_id===c.id).length;return '<article class="feedback"><div class="row" style="justify-content:space-between"><b>'+escape(c.title)+'</b><span class="pill">'+escape(c.status)+'</span></div><p>'+count+' player(s) · '+(c.creator_id===user.id?'Created by you':'Community duel')+'</p>'+(joined?'<span class="pill">You joined</span>':'<button data-join-challenge="'+c.id+'">Join duel →</button>')+' <small>Code: '+escape(c.id.slice(0,8))+'</small></article>'}).join('')||'<p>No open duels yet. Create one to get started.</p>';el.onclick=async e=>{const id=e.target.dataset.joinChallenge;if(!id)return;e.target.disabled=true;const ins=await supabase.from('challenge_players').insert({challenge_id:id,user_id:user.id});say('challengemsg',ins.error?(ins.error.code==='23505'?'You have already joined this duel.':ins.error.message):'You joined the duel.');loadChallenges()}}
 
