@@ -770,6 +770,78 @@ body.flash-wizard-active .flash-wizard-nav{grid-column:2!important;grid-row:3!im
 .blurt-review{margin-top:20px}.blurt-target{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);line-height:1.6}.blurt-target input{margin-top:5px;accent-color:#5798d0;flex:0 0 auto}.blurt-target span{display:block}.blurt-target small{color:var(--muted)}.blurt-session textarea{min-height:190px;line-height:1.65;padding:16px}
 
 .header-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.header-actions button[data-page]{border:1px solid var(--line);border-radius:10px;padding:9px 15px;background:var(--card);color:var(--ink);font-weight:700}.header-actions button[data-page]:hover{border-color:#5798d0;background:var(--soft)}@media(max-width:620px){header{align-items:flex-start;gap:10px;flex-wrap:wrap}.header-actions{justify-content:flex-start}.header-actions button[data-page]{padding:8px 11px}}
+
+/* Practice activities: unified charcoal, slate and restrained accent system */
+:root{--practice-blue:#78a9d5;--practice-teal:#6eb9ad;--practice-amber:#d8ad68;--practice-coral:#d98c82}
+.practice-dashboard{max-width:1180px;margin:0 auto}
+.practice-tool-card{min-height:190px;padding:24px 25px!important;border-radius:18px!important;text-align:left!important;display:flex;flex-direction:column;align-items:flex-start;gap:12px!important;background:linear-gradient(145deg,rgba(255,255,255,.055),rgba(255,255,255,.018))!important;border:1px solid rgba(150,170,190,.19)!important;box-shadow:0 12px 30px rgba(0,0,0,.13)!important;transition:transform .2s,border-color .2s,background .2s}
+.practice-tool-card:hover{transform:translateY(-3px);border-color:rgba(120,169,213,.55)!important;background:linear-gradient(145deg,rgba(120,169,213,.11),rgba(255,255,255,.025))!important}
+.practice-tool-card b{font-size:22px;line-height:1.2;color:var(--ink)}
+.practice-tool-card small{font-size:14px;line-height:1.55;color:var(--muted);max-width:34ch}
+.practice-tool-kicker{font-size:10px;letter-spacing:1.7px;font-weight:850;color:var(--practice-blue)}
+.practice-tool-go{margin-top:auto;font-size:13px;font-weight:800;color:var(--practice-blue)}
+.practice-level-panel,.practice-welcome,.practice-hub-bottom{border-color:rgba(140,165,190,.2)!important;background:linear-gradient(145deg,rgba(120,169,213,.08),rgba(255,255,255,.018))!important}
+.flash-wizard{max-width:1080px;padding:10px 0 34px}
+.flash-wizard-top{padding:10px 2px 18px;border-bottom:1px solid rgba(140,165,190,.18)}
+.flash-brand{color:var(--practice-blue)!important}
+.flash-mode-switch{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.flash-mode-switch button{border:1px solid rgba(140,165,190,.22);border-radius:999px;padding:9px 15px;background:rgba(255,255,255,.035);color:var(--muted)}
+.flash-mode-switch button.active{background:rgba(120,169,213,.16);border-color:var(--practice-blue);color:var(--ink)}
+.flash-stepper{margin:26px 0 22px}
+.flash-step span{border-radius:9px!important}
+.flash-step.current span,.flash-step.done span{background:var(--practice-blue)!important;border-color:var(--practice-blue)!important;color:#101820!important}
+.flash-wizard-panel{border-radius:20px!important;background:rgba(255,255,255,.025)!important;box-shadow:none!important;padding:clamp(22px,4vw,42px)!important}
+.flash-wizard-intro h2{font-size:clamp(28px,4vw,40px)!important;letter-spacing:-.8px}
+.flash-wizard-intro p{font-size:15px;line-height:1.65;max-width:62ch}
+.flash-book-stage{justify-content:flex-start;gap:32px;max-width:800px;margin:0 auto}
+.flash-book-side{display:none!important}
+.flash-book-cover{background:linear-gradient(145deg,#30475a,#1d2b38 72%)!important;border-color:#66839b!important;box-shadow:0 18px 40px rgba(0,0,0,.28)!important;transform:none!important;border-radius:12px!important}
+.flash-book-rule{background:#9bb5c8!important}
+.flash-book-info{flex:1}
+.flash-book-info h3{font-size:26px}
+.flash-poem-grid{gap:10px!important}
+.flash-poem-option{padding:15px 16px!important;border-radius:12px!important;background:rgba(255,255,255,.025)!important;border:1px solid rgba(140,165,190,.18)!important}
+.flash-poem-option.selected{background:rgba(110,185,173,.1)!important;border-color:var(--practice-teal)!important}
+.flash-poem-check{color:var(--practice-teal)!important}
+.flash-session-choice{border-radius:15px!important;background:rgba(255,255,255,.025)!important;border:1px solid rgba(140,165,190,.2)!important;padding:22px!important}
+.flash-session-choice.selected{border-color:var(--practice-blue)!important;background:rgba(120,169,213,.1)!important}
+.flash-session-choice em,.flash-endless-choice em{color:var(--practice-blue)!important}
+.flash-ready-card{border-radius:16px!important;background:rgba(255,255,255,.035)!important;border:1px solid rgba(140,165,190,.2)!important;padding:24px!important}
+.flash-ready-icon{display:none!important}
+.flash-wizard-nav{margin-top:18px}
+.flash-wizard-nav button,.flash-wizard-top>button{border-radius:10px!important}
+body.activity-session #reviseArea{max-width:1040px;margin:0 auto;padding:22px clamp(12px,3vw,30px) 44px}
+body.activity-session #reviseArea .activity-top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid rgba(140,165,190,.18)}
+body.activity-session #reviseArea .activity-heading h1,body.activity-session #reviseArea .activity-top h1{font-size:clamp(26px,4vw,38px);letter-spacing:-.8px;margin:5px 0}
+body.activity-session #reviseArea .activity-brand{font-size:10px;letter-spacing:1.8px;color:var(--practice-blue)}
+body.activity-session #reviseArea .activity-top p{color:var(--muted);margin:0}
+body.activity-session #reviseArea .activity-exit,body.activity-session #reviseArea #extraExit{border:1px solid rgba(140,165,190,.25);border-radius:10px;padding:10px 15px;background:rgba(255,255,255,.035);color:var(--ink)}
+body.activity-session #reviseArea .card{border:1px solid rgba(140,165,190,.2)!important;border-radius:18px!important;background:linear-gradient(145deg,rgba(255,255,255,.045),rgba(255,255,255,.018))!important;box-shadow:none!important;padding:clamp(22px,4vw,36px)!important}
+body.activity-session #reviseArea h2{font-size:clamp(24px,3.5vw,34px);line-height:1.2;letter-spacing:-.5px}
+body.activity-session #reviseArea p{line-height:1.7}
+body.activity-session #reviseArea .flash-stage{height:min(58vh,560px);min-height:330px}
+body.activity-session #reviseArea .flash-face{border:1px solid rgba(120,169,213,.3);background:linear-gradient(145deg,#263747,#1b2732)!important;color:#f4f7fa;border-radius:20px!important;box-shadow:0 20px 55px rgba(0,0,0,.22)!important}
+body.activity-session #reviseArea .flash-back{background:linear-gradient(145deg,#243b3b,#1b2d30)!important}
+body.activity-session #reviseArea .flash-front .quote{font-size:clamp(26px,4.4vw,48px);max-width:780px}
+body.activity-session #reviseArea .flash-kicker{color:#a9c4d8}
+body.activity-session #reviseArea .tap-cue{color:#b5c3ce;font-size:13px;letter-spacing:.3px}
+body.activity-session #reviseArea .rating-controls{gap:12px;margin:16px 0}
+body.activity-session #reviseArea .rating-controls button{min-width:150px;border-radius:11px;padding:13px 18px}
+body.activity-session #reviseArea .rating-controls #miss{border:1px solid rgba(217,140,130,.55);color:#e5a59c;background:rgba(217,140,130,.08)}
+body.activity-session #reviseArea .rating-controls #known{background:rgba(110,185,173,.18);border:1px solid var(--practice-teal);color:#b9e0d8}
+body.activity-session #reviseArea .blurt-session textarea{min-height:230px;background:rgba(255,255,255,.035);border:1px solid rgba(140,165,190,.25);border-radius:12px;padding:18px;line-height:1.7}
+body.activity-session #reviseArea .blurt-review{margin-top:22px;padding-top:18px;border-top:1px solid rgba(140,165,190,.2)}
+body.activity-session #reviseArea .blurt-target{display:flex;gap:14px;padding:15px 0;border-bottom:1px solid rgba(140,165,190,.14);line-height:1.6}
+body.activity-session #reviseArea .quiz-session .answer{border:1px solid rgba(140,165,190,.23);border-radius:12px;background:rgba(255,255,255,.035);padding:17px;color:var(--ink);min-height:64px}
+body.activity-session #reviseArea .quiz-session .answer:hover:not(:disabled){border-color:var(--practice-blue);background:rgba(120,169,213,.1)}
+body.activity-session #reviseArea .progression-session .feedback{padding:18px 0;line-height:1.8;border-top:1px solid rgba(140,165,190,.18);border-bottom:1px solid rgba(140,165,190,.18)}
+.mindmap-session,.exam-session{display:flex;flex-direction:column;gap:16px}
+.map-branches{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.map-branch{padding:15px;border:1px solid rgba(140,165,190,.2);border-radius:12px;background:rgba(255,255,255,.025)}
+.map-branch span{display:block;font-size:10px;font-weight:800;letter-spacing:1.3px;color:var(--practice-blue)}
+.map-branch .field{margin:8px 0 0}
+@media(max-width:650px){.flash-book-stage{flex-direction:column;text-align:center}.flash-book-cover{width:210px;min-width:210px}.flash-book-info{max-width:100%}.flash-wizard-panel{padding:18px!important}.flash-session-grid{grid-template-columns:1fr 1fr}body.activity-session #reviseArea .flash-stage{min-height:300px;height:48vh}body.activity-session #reviseArea .activity-top{align-items:flex-start}.practice-tool-card{min-height:165px;padding:18px!important}}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
