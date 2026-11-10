@@ -286,6 +286,34 @@ body.activity-session #reviseArea .flash-face { box-shadow: none !important; }
 .learning-points li { padding:4px 0 7px !important; color:var(--ink) !important; }
 .flash-back h3 { background:transparent !important; border:0 !important; box-shadow:none !important; }
 
+
+/* Focus-first learning content: remove decorative symbols and visual noise from study text. */
+.learning-summary, .learning-summary *, .flash-back-scroll, .flash-back-scroll *,
+.note-card, .note-card *, .analysis-card, .analysis-card *,
+.learning-points, .learning-points * {
+  background:transparent !important;
+  box-shadow:none !important;
+  text-shadow:none !important;
+}
+.learning-summary, .flash-back-scroll, .note-card, .analysis-card {
+  border:0 !important; border-radius:0 !important;
+}
+.learning-summary h3, .flash-back-scroll h3, .note-card h3, .analysis-card h3 {
+  color:var(--ink) !important; font-size:20px !important; font-weight:700 !important;
+  letter-spacing:0 !important;
+}
+.learning-points { list-style:disc !important; padding-left:26px !important; }
+.learning-points li {
+  color:var(--ink) !important; font-size:clamp(17px,2vw,20px) !important;
+  line-height:1.8 !important; margin:0 0 8px !important;
+}
+.learning-summary p, .flash-back-scroll p, .note-card p, .analysis-card p {
+  color:var(--ink) !important; font-size:clamp(17px,2vw,20px) !important;
+  line-height:1.8 !important;
+}
+.learning-summary .emoji, .flash-back-scroll .emoji, .note-card .emoji,
+.analysis-card .emoji, .learning-points .emoji { display:none !important; }
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav"><button data-page="home" class="active">Home</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
