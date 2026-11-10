@@ -1566,7 +1566,7 @@ function practiceBlurting(){
    missed.map((c,i)=>'<article class="blurt-second-prompt"><b>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</b><textarea class="field" rows="3" data-second-draft="'+i+'" placeholder="Recall the method, effect and wider message…"></textarea><label><input type="checkbox" data-second-check="'+i+'"> I rebuilt this point accurately</label></article>').join('')+
    '<div class="blurt-review-actions"><button id="blurtBackReview">Back to review</button><button id="blurtFinishSecond" class="primary">Finish second round →</button></div></section>');
   $('blurtBackReview').onclick=()=>showReview(draft,guided);
-  $('blurtFinishSecond').onclick=()=>saveBlurting(draft,guided,missed,[...area.querySelectorAll('[data-second-draft]')].map(x=>x.value).join('\n'),allRemembered);
+  $('blurtFinishSecond').onclick=()=>saveBlurting(draft,guided,missed,[...$('reviseArea').querySelectorAll('[data-second-draft]')].map(x=>x.value).join('\n'),allRemembered);
  }
  async function saveBlurting(draft,guided,secondItems,secondDraft,allRemembered=false){
   const checks=[...$('reviseArea').querySelectorAll('[data-blurt-check]:checked')].length;
@@ -1819,11 +1819,16 @@ function practiceQuickQuiz(){
   }else moveNext();
  }
  function moveNext(){position++;if(position>=questions.length)finishQuiz(false);else showQuestion()}
+ function quizCorrectLabel(q){
+  if(q.type==='multi')return q.options.filter(x=>q.correct.includes(x.value)).map(x=>x.label).join(' · ');
+  if(q.type==='truefalse')return q.correct==='true'?'True':'False';
+  return q.expected||q.correct;
+ }
  async function finishQuiz(timeUp){
   if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}quizTimer=null;
   const correct=answers.filter(x=>x.correct).length,accuracy=questions.length?Math.round(correct/questions.length*100):0;
   const strong=[...new Set(answers.filter(x=>x.correct).map(x=>x.q.poem))],weak=[...new Set(answers.filter(x=>!x.correct).map(x=>x.q.poem))];
-  const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Correct</span></div><div><b>'+Math.max(0,questions.length-correct)+'</b><span>To review</span></div><div><b>'+accuracy+'%</b><span>Accuracy</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3><p>'+(strong.length?strong.map(practiceSafe).join(' · '):'Keep practising to build secure topics.')+'</p></section><section><h3>Knowledge gaps</h3><p>'+(weak.length?weak.map(practiceSafe).join(' · '):'No weak topics recorded in this round.')+'</p></section></div><div class="quiz-detailed-review"><h3>Question-by-question review</h3>'+answers.map((x,i)=>'<article><span>'+(x.correct?'CORRECT':'REVIEW')+' · '+(i+1)+'</span><b>'+practiceSafe(x.q.prompt)+'</b><p>'+practiceSafe(x.q.display)+'</p><small>Answer: '+practiceSafe(x.q.type==='multi'?x.q.correct.join(', '):x.q.expected||x.q.correct)+'</small><p>'+practiceSafe(x.q.explanation||'')+'</p></article>').join('')+'</div><p>'+(timeUp?'The timer ended before every question was answered. ':'')+'Your breakdown is grouped by poem so you can target revision.</p>';
+  const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Correct</span></div><div><b>'+Math.max(0,questions.length-correct)+'</b><span>To review</span></div><div><b>'+accuracy+'%</b><span>Accuracy</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3><p>'+(strong.length?strong.map(practiceSafe).join(' · '):'Keep practising to build secure topics.')+'</p></section><section><h3>Knowledge gaps</h3><p>'+(weak.length?weak.map(practiceSafe).join(' · '):'No weak topics recorded in this round.')+'</p></section></div><div class="quiz-detailed-review"><h3>Question-by-question review</h3>'+answers.map((x,i)=>'<article><span>'+(x.correct?'CORRECT':'REVIEW')+' · '+(i+1)+'</span><b>'+practiceSafe(x.q.prompt)+'</b><p>'+practiceSafe(x.q.display)+'</p><small>Answer: '+practiceSafe(quizCorrectLabel(x.q))+'</small>'+(feedbackStyle==='minimal'?'':'<p>'+practiceSafe(x.q.explanation||'')+'</p>')+'</article>').join('')+'</div><p>'+(timeUp?'The timer ended before every question was answered. ':'')+'Your breakdown is grouped by poem so you can target revision.</p>';
   await practiceAward('quick-quiz',correct,'Power & Conflict',accuracy,{total_questions:questions.length,correct_answers:correct,difficulty,question_formats:questions.map(x=>x.type),strong_topics:strong,weak_topics:weak,time_up:timeUp},'Quiz results',correct+' of '+questions.length+' correct',detail,started,practiceQuickQuiz);
  }
  renderSetup();
@@ -1832,7 +1837,7 @@ function practiceQuickQuiz(){
 function practiceMatchGaps(){
  const started=Date.now(),area=$('reviseArea'),all=practiceShuffle(practiceDeckData());
  let mode='matching',matchFormat='quote-poem',gapFormat='typed',rapid=false,timed=false;
- let remaining=180,tick=null,items=[],matched=[],selected=null,attempts=[],questionIndex=0,score=0;
+ let remaining=180,tick=null,items=[],rightOrder=[],matched=[],selected=null,attempts=[],questionIndex=0,score=0;
  function renderSetup(){
   practiceMount(practiceHeader('Match Up & Fill the Gaps','Choose a matching challenge or fill-the-gap round. Both can be played in rapid-fire mode.')+
    '<section class="match-setup"><span class="rev-kicker">CHOOSE YOUR CHALLENGE</span><h2>Make the connections.</h2><div class="match-mode-grid"><button data-game-mode="matching" class="selected"><b>Match Up</b><small>Pair quotations, methods and contexts with their correct match.</small></button><button data-game-mode="gaps"><b>Fill the Gaps</b><small>Complete exact quotations using typed or multiple-choice answers.</small></button></div>'+
@@ -1863,11 +1868,11 @@ function practiceMatchGaps(){
   });
  }
  function startMatching(){
-  items=makePairs();matched=[];selected=null;attempts=[];drawMatching();
+  items=makePairs();rightOrder=practiceShuffle(items);matched=[];selected=null;attempts=[];drawMatching();
  }
  function drawMatching(){
   const left=items.filter(x=>!matched.includes(x.id));
-  const right=practiceShuffle(items.filter(x=>!matched.includes(x.id)));
+  const right=rightOrder.filter(x=>!matched.includes(x.id));
   practiceMount(practiceHeader('Match Up',rapid?'Rapid-fire · match as many pairs as you can.':'Choose one item on the left, then its match on the right.')+
    '<section class="match-play-screen"><div class="match-play-meta"><span class="rev-kicker">'+matchFormat.replace('-',' → ').toUpperCase()+'</span><span>'+matched.length+' / '+items.length+' pairs matched</span>'+(timed?'<strong class="quiz-clock" id="matchClock">'+timerText()+'</strong>':'')+'</div>'+practiceProgressBar(matched.length,items.length)+
    '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-match-left="'+x.id+'">'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="matchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="matchEnd">Finish early</button><button id="matchReset" class="quiet-button">Reset pair selection</button></div></section>');
