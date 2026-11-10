@@ -878,6 +878,24 @@ body.activity-session #reviseArea .progression-session .feedback{padding:18px 0;
 .rev-good{color:#399b75;font-weight:750}.rev-wrong{color:#c66d56;font-weight:750}
 .rev-results{text-align:center}.rev-score{font-size:clamp(54px,9vw,82px);font-weight:900;letter-spacing:-3px;margin:15px 0}
 @media(max-width:600px){.rev-head{align-items:flex-start}.rev-options{grid-template-columns:1fr}.rev-front{min-height:300px}.rev-rate{flex-direction:column}}
+
+/* Full-screen practice sessions: the activity itself owns the entire viewport. */
+body.activity-session,body.activity-session #app,body.activity-session #page,body.activity-session .wrap{background:var(--bg)!important}
+body.activity-session #reviseArea{inset:0!important;width:100vw!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;padding:clamp(18px,3vw,42px)!important;gap:clamp(16px,2.5vh,28px)!important;align-items:stretch!important}
+body.activity-session #reviseArea>*{width:100%!important;max-width:none!important}
+body.activity-session #reviseArea>.rev-head,body.activity-session #reviseArea>.activity-top{flex:0 0 auto}
+body.activity-session #reviseArea>.rev-panel,body.activity-session #reviseArea>section.card{flex:1 0 auto;min-height:0;width:100%!important;max-width:none!important;display:flex;flex-direction:column;justify-content:center;padding:clamp(22px,5vw,64px)!important;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important}
+body.activity-session #reviseArea .rev-flash-card,body.activity-session #reviseArea .rev-front,body.activity-session #reviseArea .rev-back,body.activity-session #reviseArea .rev-writing,body.activity-session #reviseArea .rev-model,body.activity-session #reviseArea .feedback{background:transparent!important;box-shadow:none!important}
+body.activity-session #reviseArea .rev-flash-card{border:0!important;border-radius:0!important;min-height:55vh;display:flex;flex-direction:column;justify-content:center;padding:clamp(18px,4vw,48px)!important}
+body.activity-session #reviseArea .rev-front,body.activity-session #reviseArea .rev-back{border:0!important;border-radius:0!important;padding:clamp(12px,3vw,30px)!important}
+body.activity-session #reviseArea .rev-writing{width:100%;min-height:clamp(180px,34vh,420px);border:1px solid var(--line)!important;border-radius:14px;padding:18px!important;color:var(--ink)}
+body.activity-session #reviseArea .rev-actions,body.activity-session #reviseArea .rev-rate{margin-top:auto;padding-top:22px}
+@media(max-width:700px){
+ body.activity-session #reviseArea{padding:calc(14px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom))!important;gap:14px!important}
+ body.activity-session #reviseArea>.rev-panel,body.activity-session #reviseArea>section.card{padding:12px 4px!important}
+ body.activity-session #reviseArea .rev-flash-card{min-height:48vh;padding:12px 0!important}
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
