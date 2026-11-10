@@ -1373,6 +1373,111 @@ function practiceMindMaps(){
  }
  renderHomeFromDb();
 }
+
+function practiceQuickQuiz(){
+ const started=Date.now(),all=practiceShuffle(practiceDeckData());
+ let questions=[],answers=[],position=0,difficulty='core',feedbackStyle='immediate',timed=false,remaining=240,quizTimer=null;
+ function renderSetup(){
+  practiceMount(practiceHeader('Quick Quiz','Choose the formats, difficulty and feedback style for your round.')+
+   '<section class="quiz-setup"><div class="quiz-setup-intro"><span class="rev-kicker">BUILD YOUR ROUND</span><h2>Test what you know.</h2><p>Mix recall, analysis and application. Every question is drawn from your course notes.</p></div>'+
+   '<div class="quiz-settings-grid"><section><h3>Question formats</h3><div class="quiz-format-list"><label><input type="checkbox" data-qtype="single" checked><span><b>Multiple choice</b><small>Identify the poem or method.</small></span></label><label><input type="checkbox" data-qtype="truefalse" checked><span><b>True or false</b><small>Judge a precise statement.</small></span></label><label><input type="checkbox" data-qtype="multi" checked><span><b>Select all that apply</b><small>Find every supported detail.</small></span></label><label><input type="checkbox" data-qtype="gap" checked><span><b>Fill the missing word</b><small>Recall exact quotation wording.</small></span></label></div></section>'+
+   '<section><h3>Difficulty</h3><div class="quiz-choice-list"><button data-quiz-level="core" class="selected"><b>Core</b><small>Build confidence and secure key knowledge · 8 questions</small></button><button data-quiz-level="challenge"><b>Challenge</b><small>More demanding methods and analysis · 10 questions</small></button></div><h3 class="quiz-subheading">Feedback style</h3><div class="quiz-feedback-list"><label><input type="radio" name="quizFeedback" value="immediate" checked>Immediate explanations</label><label><input type="radio" name="quizFeedback" value="end">Review all answers at the end</label><label><input type="radio" name="quizFeedback" value="minimal">Minimal feedback</label></div><label class="quiz-timer-choice"><input type="checkbox" id="quizTimed"> Add an optional timer</label></section></div>'+
+   '<div class="quiz-setup-footer"><span>XP reward · 1,200+ per completed round</span><button id="quizStart" class="primary">Start quiz →</button></div><p id="quizSetupError" role="status"></p></section>');
+  areaQuizSetupBind();
+ }
+ function areaQuizSetupBind(){
+  area.querySelectorAll('[data-quiz-level]').forEach(b=>b.onclick=()=>{difficulty=b.dataset.quizLevel;area.querySelectorAll('[data-quiz-level]').forEach(x=>x.classList.toggle('selected',x===b))});
+  $('quizStart').onclick=()=>{
+   const formats=[...area.querySelectorAll('[data-qtype]:checked')].map(x=>x.dataset.qtype);
+   if(!formats.length){$('quizSetupError').textContent='Choose at least one question format.';return}
+   feedbackStyle=area.querySelector('input[name="quizFeedback"]:checked')?.value||'immediate';
+   timed=$('quizTimed').checked;
+   const count=difficulty==='challenge'?10:8;
+   questions=practiceShuffle(Array.from({length:count},(_,i)=>makeQuestion(all[i%all.length],formats[i%formats.length],i)));
+   answers=[];position=0;remaining=difficulty==='challenge'?300:240;
+   showQuestion();
+   if(timed)startQuizTimer();
+  };
+ }
+ function makeQuestion(c,type,i){
+  if(type==='single'){
+   if(difficulty==='challenge'){
+    const pool=practiceShuffle([...new Set(all.map(x=>x.method).filter(Boolean))]);
+    const options=practiceShuffle([...new Set([c.method,...pool])]).slice(0,4);
+    return {type,poem:c.poem,quote:c.quote,prompt:'Which method is used in this quotation?',display:'“'+c.quote+'”',options,correct:c.method,explanation:c.analysis};
+   }
+   const options=practiceShuffle([...new Set([c.poem,...practiceShuffle(poems.filter(p=>p[0]!==c.poem).map(p=>p[0])).slice(0,3)])]);
+   return {type,poem:c.poem,quote:c.quote,prompt:'Which poem does this quotation come from?',display:'“'+c.quote+'”',options,correct:c.poem,explanation:c.analysis};
+  }
+  if(type==='truefalse'){
+   const truth=Math.random()>.5,other=practiceShuffle(poems.filter(p=>p[0]!==c.poem))[0]?.[0]||c.poem;
+   const named=truth?c.poem:other;
+   return {type,poem:c.poem,quote:c.quote,prompt:'The quotation below comes from '+named+'.',display:'“'+c.quote+'”',correct:truth?'true':'false',explanation:'The quotation is from '+c.poem+'. '+c.analysis};
+  }
+  if(type==='multi'){
+   const otherAuthor=practiceShuffle(all.filter(x=>x.poem!==c.poem))[0]?.author||'';
+   const statements=[
+    {value:'author',label:'The poet is '+c.author+'.',correct:true},
+    {value:'theme',label:'The poem explores '+c.theme+'.',correct:true},
+    {value:'method',label:'The quotation uses '+c.method+'.',correct:true},
+    {value:'other',label:'The poem is written by '+otherAuthor+'.',correct:false}
+   ];
+   return {type,poem:c.poem,quote:c.quote,prompt:'Select every accurate statement about this quotation and its poem.',display:'“'+c.quote+'”',options:practiceShuffle(statements),correct:['author','theme','method'],explanation:c.analysis+' '+c.context};
+  }
+  const tokens=[...c.quote.matchAll(/\b[A-Za-z]{3,}\b/g)];
+  const missing=tokens[Math.min(tokens.length-1,Math.floor(tokens.length/2))]?.[0]||c.quote.split(/\s+/)[0];
+  const gapQuote=c.quote.replace(missing,'□□□□');
+  return {type:'gap',poem:c.poem,quote:c.quote,prompt:'Complete the missing word in this quotation.',display:'“'+gapQuote+'”',correct:missing.toLowerCase().replace(/[^\w]/g,''),expected:missing,explanation:c.analysis};
+ }
+ function timerText(){return Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0')}
+ function startQuizTimer(){
+  quizTimer=setInterval(()=>{remaining=Math.max(0,remaining-1);if($('quizClock'))$('quizClock').textContent=timerText();if(remaining===0){clearInterval(quizTimer);quizTimer=null;window.rcPracticeTimer=null;finishQuiz(true)}},1000);window.rcPracticeTimer=quizTimer;
+ }
+ function showQuestion(){
+  const q=questions[position];
+  const feedback=timed?'<span class="quiz-clock" id="quizClock">'+timerText()+'</span>':'';
+  let answerUI='';
+  if(q.type==='single')answerUI='<div class="quiz-answer-options">'+q.options.map((x,i)=>'<button data-quiz-answer="'+practiceSafe(x)+'">'+practiceSafe(x)+'</button>').join('')+'</div>';
+  if(q.type==='truefalse')answerUI='<div class="quiz-answer-options quiz-binary"><button data-quiz-answer="true">True</button><button data-quiz-answer="false">False</button></div>';
+  if(q.type==='multi')answerUI='<div class="quiz-answer-options">'+q.options.map(x=>'<label class="quiz-multi-option"><input type="checkbox" data-quiz-multi="'+practiceSafe(x.value)+'"><span>'+practiceSafe(x.label)+'</span></label>').join('')+'</div><button id="quizSubmitMulti" class="primary">Check selections</button>';
+  if(q.type==='gap')answerUI='<div class="quiz-gap-answer"><input id="quizGapAnswer" class="field" placeholder="Type the missing word"><button id="quizGapSubmit" class="primary">Submit answer</button></div>';
+  practiceMount(practiceHeader('Quick Quiz','Question '+(position+1)+' of '+questions.length+' · '+(difficulty==='challenge'?'Challenge':'Core'))+
+   '<section class="quiz-question-screen"><div class="quiz-question-top"><span class="rev-kicker">'+q.type.toUpperCase().replace('TRUEFALSE','TRUE OR FALSE').replace('MULTI','SELECT ALL')+'</span>'+feedback+'</div>'+practiceProgressBar(position+1,questions.length)+
+   '<h2>'+practiceSafe(q.prompt)+'</h2><blockquote class="quiz-question-quote">'+practiceSafe(q.display)+'</blockquote>'+answerUI+'<div id="quizQuestionFeedback" aria-live="polite"></div><div class="quiz-question-footer"><span>'+questions.length+' questions · '+difficulty+'</span><button id="quizSkip">Skip question</button></div></section>');
+  areaQuizQuestionBind(q);
+ }
+ function normalise(v){return String(v||'').toLowerCase().replace(/[“”"'.,!?;:…]/g,'').replace(/\s+/g,' ').trim()}
+ function areaQuizQuestionBind(q){
+  area.querySelectorAll('[data-quiz-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.quizAnswer,q));
+  $('quizSubmitMulti')?.addEventListener('click',()=>answerQuestion([...area.querySelectorAll('[data-quiz-multi]:checked')].map(x=>x.dataset.quizMulti),q));
+  $('quizGapSubmit')?.addEventListener('click',()=>answerQuestion($('quizGapAnswer').value,q));
+  $('quizGapAnswer')?.addEventListener('keydown',e=>{if(e.key==='Enter')answerQuestion($('quizGapAnswer').value,q)});
+  $('quizSkip').onclick=()=>{answers.push({q,answer:'Skipped',correct:false});moveNext()};
+ }
+ function answerQuestion(answer,q){
+  if(answers.some(x=>x.q===q))return;
+  let correct=false,shown=Array.isArray(answer)?answer:[answer];
+  if(q.type==='multi')correct=q.correct.length===shown.length&&q.correct.every(x=>shown.includes(x));
+  else if(q.type==='gap')correct=normalise(answer)===q.correct;
+  else correct=normalise(answer)===normalise(q.correct);
+  const item={q,answer:shown,correct};answers.push(item);
+  if(feedbackStyle==='immediate'){
+   area.querySelectorAll('[data-quiz-answer],[data-quiz-multi]').forEach(x=>x.disabled=true);
+   $('quizSubmitMulti')?.setAttribute('disabled','disabled');$('quizGapSubmit')?.setAttribute('disabled','disabled');
+   $('quizQuestionFeedback').innerHTML='<div class="quiz-feedback '+(correct?'correct':'incorrect')+'"><b>'+(correct?'That’s right.':'Not quite.')+'</b><p>'+practiceSafe(q.explanation||'Review the quotation and the details in the poem.')+'</p><button id="quizContinue" class="primary">Continue →</button></div>';
+   $('quizContinue').onclick=moveNext;
+  }else moveNext();
+ }
+ function moveNext(){position++;if(position>=questions.length)finishQuiz(false);else showQuestion()}
+ async function finishQuiz(timeUp){
+  if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}quizTimer=null;
+  const correct=answers.filter(x=>x.correct).length,accuracy=questions.length?Math.round(correct/questions.length*100):0;
+  const strong=[...new Set(answers.filter(x=>x.correct).map(x=>x.q.poem))],weak=[...new Set(answers.filter(x=>!x.correct).map(x=>x.q.poem))];
+  const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Correct</span></div><div><b>'+Math.max(0,questions.length-correct)+'</b><span>To review</span></div><div><b>'+accuracy+'%</b><span>Accuracy</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3><p>'+(strong.length?strong.map(practiceSafe).join(' · '):'Keep practising to build secure topics.')+'</p></section><section><h3>Knowledge gaps</h3><p>'+(weak.length?weak.map(practiceSafe).join(' · '):'No weak topics recorded in this round.')+'</p></section></div><div class="quiz-detailed-review"><h3>Question-by-question review</h3>'+answers.map((x,i)=>'<article><span>'+(x.correct?'CORRECT':'REVIEW')+' · '+(i+1)+'</span><b>'+practiceSafe(x.q.prompt)+'</b><p>'+practiceSafe(x.q.display)+'</p><small>Answer: '+practiceSafe(x.q.type==='multi'?x.q.correct.join(', '):x.q.expected||x.q.correct)+'</small><p>'+practiceSafe(x.q.explanation||'')+'</p></article>').join('')+'</div><p>'+(timeUp?'The timer ended before every question was answered. ':'')+'Your breakdown is grouped by poem so you can target revision.</p>';
+  await practiceAward('quick-quiz',correct,'Power & Conflict',accuracy,{total_questions:questions.length,correct_answers:correct,difficulty,question_formats:questions.map(x=>x.type),strong_topics:strong,weak_topics:weak,time_up:timeUp},'Quiz results',correct+' of '+questions.length+' correct',detail,started,practiceQuickQuiz);
+ }
+ renderSetup();
+}
 async function setupFriends(){$('findfriend').onclick=async()=>{let name=$('friendname').value.trim().toLowerCase();if(!name)return;let r=await supabase.from('profiles').select('id,username').eq('username',name).maybeSingle();if(r.error||!r.data)return say('friendmsg','No matching username found.');if(r.data.id===user.id)return say('friendmsg','That is your own account.');let prior=await supabase.from('friend_requests').select('id,status').eq('sender_id',user.id).eq('receiver_id',r.data.id).maybeSingle();if(prior.data)return say('friendmsg',prior.data.status==='accepted'?'You are already friends.':'A request has already been sent to this user.');let ins=await supabase.from('friend_requests').insert({sender_id:user.id,receiver_id:r.data.id});say('friendmsg',ins.error?(ins.error.code==='23505'?'A request already exists between these accounts.':ins.error.message):'Friend request sent to '+r.data.username+'.')};let r=await supabase.from('friend_requests').select('id,sender_id,status').eq('receiver_id',user.id).eq('status','pending');const ids=(r.data||[]).map(x=>x.sender_id);let profileRows=[];if(ids.length){const pr=await supabase.from('profiles').select('id,username').in('id',ids);profileRows=pr.data||[]}const names=Object.fromEntries(profileRows.map(x=>[x.id,x.username]));$('requests').innerHTML=(r.data||[]).map(x=>'<div class="row"><b>'+escape(names[x.sender_id]||'Student')+'</b><button data-accept="'+x.id+'">Accept</button><button data-decline="'+x.id+'">Decline</button></div>').join('')||'No pending requests.';$('requests').onclick=async e=>{let id=e.target.dataset.accept||e.target.dataset.decline;if(!id)return;await supabase.from('friend_requests').update({status:e.target.dataset.accept?'accepted':'declined'}).eq('id',id);setupFriends()};$('newchallenge').onclick=async()=>{let r=await supabase.from('challenges').insert({creator_id:user.id,title:'Power & Conflict duel',subject_id:'english-lit',mode:'quote-race'}).select().single();if(r.error){say('challengemsg',r.error.message);return}const join=await supabase.from('challenge_players').insert({challenge_id:r.data.id,user_id:user.id});say('challengemsg',join.error?'Duel created, but joining failed: '+join.error.message:'Duel created. Share its ID with a friend: '+r.data.id);loadChallenges()};loadChallenges()}
 async function loadChallenges(){const el=$('challengeList');if(!el)return;const [cr,pr]=await Promise.all([supabase.from('challenges').select('id,title,creator_id,status,created_at').in('status',['open','active']).order('created_at',{ascending:false}).limit(30),supabase.from('challenge_players').select('challenge_id,user_id,score')]);if(cr.error){el.textContent=cr.error.message;return}const players=pr.data||[];el.innerHTML=(cr.data||[]).map(c=>{const joined=players.some(x=>x.challenge_id===c.id&&x.user_id===user.id),count=players.filter(x=>x.challenge_id===c.id).length;return '<article class="feedback"><div class="row" style="justify-content:space-between"><b>'+escape(c.title)+'</b><span class="pill">'+escape(c.status)+'</span></div><p>'+count+' player(s) · '+(c.creator_id===user.id?'Created by you':'Community duel')+'</p>'+(joined?'<span class="pill">You joined</span>':'<button data-join-challenge="'+c.id+'">Join duel →</button>')+' <small>Code: '+escape(c.id.slice(0,8))+'</small></article>'}).join('')||'<p>No open duels yet. Create one to get started.</p>';el.onclick=async e=>{const id=e.target.dataset.joinChallenge;if(!id)return;e.target.disabled=true;const ins=await supabase.from('challenge_players').insert({challenge_id:id,user_id:user.id});say('challengemsg',ins.error?(ins.error.code==='23505'?'You have already joined this duel.':ins.error.message):'You joined the duel.');loadChallenges()}}
 
