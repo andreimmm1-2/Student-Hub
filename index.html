@@ -616,6 +616,61 @@ body.flash-wizard-active #reviseArea .flash-wizard {
   max-width:1050px;
 }
 
+
+
+/* Revision section: premium neutral dashboard with a persistent step rail. */
+.practice-heading{background:linear-gradient(125deg,#35434f,#222c35)!important}
+.practice-intro{max-width:900px;margin:26px auto 28px;padding:0 2px}
+.practice-intro>.pill{letter-spacing:1.4px;font-weight:800}
+.practice-intro h2{font-size:clamp(32px,4.5vw,46px)!important;letter-spacing:-1.6px!important;margin:14px 0 7px!important}
+.practice-intro p{font-size:15px;max-width:610px;color:var(--muted)}
+.practice-page{max-width:1120px!important}
+.practice-activity-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:15px!important;margin:0 auto 28px!important}
+.practice-activity-choice{position:relative;min-height:174px!important;padding:25px 26px!important;border-radius:17px!important;background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--card) 90%,var(--soft)))!important;border:1px solid var(--line)!important;box-shadow:0 10px 30px rgba(0,0,0,.055)!important;gap:10px!important}
+body.dark .practice-activity-choice{box-shadow:0 12px 32px rgba(0,0,0,.18)!important}
+.practice-activity-choice:hover{border-color:#82909b!important;transform:translateY(-3px)!important}
+.practice-activity-choice.active{border:1px solid #82909b!important;background:linear-gradient(145deg,var(--soft),var(--card))!important;padding:25px 26px!important}
+.practice-choice-number{font-size:10px!important;letter-spacing:1.8px!important;font-weight:800!important;color:var(--muted)!important}
+.practice-choice-title{font-size:24px!important;font-weight:760!important;letter-spacing:-.8px!important}
+.practice-choice-copy{max-width:440px;font-size:14px!important;line-height:1.65!important;color:var(--muted)!important}
+.practice-choice-action{font-size:13px!important;font-weight:750!important;color:var(--ink)!important}
+body.flash-wizard-active .flash-wizard{display:grid!important;grid-template-columns:190px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;column-gap:clamp(20px,3vw,38px);row-gap:16px;max-width:1180px!important;height:100%!important;margin:0 auto!important;padding:4px 0 10px!important}
+body.flash-wizard-active .flash-wizard-header{grid-column:1/-1;grid-row:1;display:flex;align-items:center;justify-content:space-between;padding:4px 0 16px;border-bottom:1px solid var(--line)}
+body.flash-wizard-active .flash-stepper{grid-column:1;grid-row:2;display:flex!important;flex-direction:column;align-items:stretch;justify-content:flex-start;gap:0;margin:0;padding:20px 0}
+body.flash-wizard-active .flash-step{position:relative;flex:none;min-height:76px;display:flex;align-items:flex-start;gap:12px;padding:0 0 22px;font-size:13px}
+body.flash-wizard-active .flash-step:not(:last-child):after{content:"";position:absolute;left:13px;top:29px;width:1px;height:43px;background:var(--line)}
+body.flash-wizard-active .flash-step span{width:28px;height:28px;background:var(--card);border-color:var(--line);color:var(--muted)}
+body.flash-wizard-active .flash-step.current span,body.flash-wizard-active .flash-step.done span{background:#627584!important;border-color:#627584!important;color:#fff!important}
+body.flash-wizard-active .flash-step.current small{color:var(--ink);font-weight:800}
+body.flash-wizard-active .flash-step small{font-size:13px;padding-top:4px}
+body.flash-wizard-active .flash-wizard-panel{grid-column:2;grid-row:2;min-height:0!important;height:100%;overflow:auto;border-radius:18px;padding:clamp(22px,3vw,38px)!important}
+body.flash-wizard-active .flash-wizard-nav{grid-column:2;grid-row:3;justify-content:space-between;padding:0 2px}
+body.flash-wizard-active .flash-book-side{background:#303a43;border-color:#596671;color:#dce2e7}
+body.flash-wizard-active .flash-book-cover{background:linear-gradient(145deg,#53616c,#303a43 75%);border-color:#7d8b95}
+body.flash-wizard-active .flash-book-kicker,body.flash-wizard-active .flash-book-foot{color:#e0e5e9}
+body.flash-wizard-active .flash-book-rule{background:#aeb9c1}
+body.flash-wizard-active .flash-book-info strong{color:#718493}
+body.flash-wizard-active .flash-poem-option.selected{border-color:#718493;background:var(--soft)}
+@media(max-width:760px){
+ .practice-intro{margin:18px 0 22px}
+ .practice-activity-grid{grid-template-columns:1fr!important;gap:11px!important}
+ .practice-activity-choice{min-height:0!important;padding:19px 20px!important}
+ .practice-activity-choice.active{padding:19px 20px!important}
+ body.flash-wizard-active .flash-wizard{display:flex!important;flex-direction:column;gap:12px;height:auto!important;min-height:calc(100dvh - 40px)!important;padding:0!important}
+ body.flash-wizard-active .flash-wizard-header{width:100%;flex:none}
+ body.flash-wizard-active .flash-stepper{width:100%;flex-direction:row;gap:7px;padding:8px 0;margin:0}
+ body.flash-wizard-active .flash-step{min-height:0;flex:1;align-items:center;gap:6px;padding:0}
+ body.flash-wizard-active .flash-step:not(:last-child):after{display:none}
+ body.flash-wizard-active .flash-step small{font-size:10px;padding:0}
+ body.flash-wizard-active .flash-step span{width:25px;height:25px;font-size:11px}
+ body.flash-wizard-active .flash-wizard-panel{width:100%;height:auto;min-height:360px;overflow:visible;padding:20px!important}
+ body.flash-wizard-active .flash-wizard-nav{width:100%;flex:none;padding:4px 0 10px}
+ .flash-book-stage{flex-wrap:wrap}
+ .flash-book-cover{min-width:155px;width:45%;height:240px}
+ .flash-book-side{height:180px;width:42px}
+ .flash-book-info{width:100%;max-width:none;text-align:center}
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav" aria-label="Main navigation"><button data-page="home">Home</button><button data-page="learn">Learn</button><button data-page="practice">Practice</button><button data-page="community">Community</button><button data-page="progress">Progress</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
