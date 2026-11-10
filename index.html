@@ -2153,7 +2153,7 @@ supabase.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
   else if(e.key.length===1&&!e.ctrlKey&&!e.metaKey){typeText+=e.key.toLowerCase();clearTimeout(typeTimer);typeTimer=setTimeout(()=>typeText='',650);const found=items.find(b=>b.textContent.trim().toLowerCase().startsWith(typeText));found?.focus()}
  });
  const scan=root=>{if(root.matches?.('select'))enhance(root);root.querySelectorAll?.('select').forEach(enhance)};
- const observer=new MutationObserver(records=>records.forEach(rec=>rec.addedNodes.forEach(n=>{if(n.nodeType===1)scan(n)})));
+ const observer=new MutationObserver(records=>records.forEach(rec=>{const owner=rec.target.nodeType===1?rec.target.closest('select'):rec.target.parentElement?.closest('select');if(owner?.dataset.customized==='true')sync(owner);rec.addedNodes.forEach(n=>{if(n.nodeType===1)scan(n)})}));
  document.addEventListener('DOMContentLoaded',()=>{scan(document);observer.observe(document.body,{childList:true,subtree:true})});
  if(document.readyState!=='loading'){scan(document);observer.observe(document.body,{childList:true,subtree:true})}
  window.addEventListener('resize',()=>openMenus.forEach(position));window.addEventListener('scroll',()=>openMenus.forEach(position),true);
