@@ -934,6 +934,83 @@ body.activity-session #reviseArea .flash-flipper.card-in-prev{animation:flash-ca
  body.activity-session #reviseArea .flash-navigation button,body.activity-session #reviseArea .rating-controls button{flex:1 1 38%;min-width:0}
 }
 
+
+/* Blurting: an actual immersive recall workspace, not a boxed textarea. */
+body.activity-session #reviseArea{z-index:99999!important;position:fixed!important;inset:0!important;top:0!important;left:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:none!important;margin:0!important;padding:clamp(18px,2.5vw,38px)!important;overflow-y:auto!important;overflow-x:hidden!important;display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;background:var(--bg)!important}
+body.activity-session #reviseArea>.activity-top{width:100%!important;max-width:none!important;flex:0 0 auto!important;padding:0 0 14px!important;margin:0!important}
+body.activity-session #reviseArea>.blurt-experience,body.activity-session #reviseArea>.blurt-review-screen,body.activity-session #reviseArea>.blurt-second-screen,body.activity-session #reviseArea>.blurt-results-screen{width:100%!important;max-width:none!important;min-height:calc(100dvh - 110px);flex:1 0 auto;display:flex;flex-direction:column;background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;padding:0!important}
+.blurt-session-bar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:4px 0 22px;border-bottom:1px solid var(--line)}
+.blurt-session-bar h2,.blurt-review-intro h2,.blurt-second-screen h2,.blurt-results-screen h2{font-size:clamp(28px,4vw,46px);letter-spacing:-1.3px;margin:7px 0}
+.blurt-session-bar p,.blurt-review-intro p,.blurt-second-screen>div>p{margin:0;color:var(--muted)}
+.blurt-timer-tools{display:flex;align-items:center;gap:14px;white-space:nowrap}
+.blurt-timer-tools strong{font-size:28px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.blurt-workspace{flex:1;min-height:480px;display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,310px);gap:clamp(22px,4vw,56px);padding:clamp(20px,3vh,34px) 0}
+.blurt-writing-area{min-width:0;display:flex;flex-direction:column;min-height:0}
+.blurt-writing-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.blurt-writing-heading>span:last-child{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.blurt-canvas{width:100%;min-height:330px;flex:1;resize:none!important;margin:14px 0!important;padding:18px 0!important;border:0!important;border-top:1px solid var(--line)!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;color:var(--ink)!important;box-shadow:none!important;font:clamp(16px,1.4vw,19px)/1.85 system-ui,sans-serif!important}
+.blurt-canvas:focus{outline:none!important;border-color:var(--accent)!important}
+.blurt-writing-foot{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.blurt-writing-foot>span{font-size:12px;color:var(--muted)}
+.blurt-guidance{border-left:1px solid var(--line);padding:2px 0 2px 24px;display:flex;flex-direction:column;align-items:stretch}
+.blurt-guidance h3{font-size:21px;margin:8px 0 4px}
+.blurt-guidance>p{font-size:13px;margin:0 0 15px;line-height:1.6;color:var(--muted)}
+.blurt-lens-list{display:grid;gap:4px}
+.blurt-lens{width:100%;display:grid;grid-template-columns:28px 1fr 16px;align-items:center;gap:10px;padding:12px 6px!important;text-align:left;border:0!important;border-bottom:1px solid var(--line)!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
+.blurt-lens>span:first-child{font-size:10px;color:var(--muted);letter-spacing:1px}
+.blurt-lens b{font-size:14px;font-weight:650}
+.blurt-lens-mark{font-size:19px;color:var(--accent);text-align:center}
+.blurt-lens.active{color:var(--accent)!important}
+.blurt-lens-hint{min-height:82px;margin-top:15px;font-size:13px;line-height:1.65;color:var(--muted)}
+.blurt-guidance-note{margin-top:auto;padding-top:16px;border-top:1px solid var(--line);font-size:11px;line-height:1.6;color:var(--muted)}
+.blurt-review-intro{padding:8px 0 18px}
+.blurt-draft{margin-top:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:12px 0}
+.blurt-draft summary{cursor:pointer;font-weight:700}
+.blurt-draft p{white-space:pre-wrap;line-height:1.7}
+.blurt-review-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:36px}
+.blurt-review-item{padding:17px 0;border-bottom:1px solid var(--line)}
+.blurt-review-item>label{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+.blurt-review-item input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+.blurt-review-item label span{display:flex;flex-direction:column;gap:5px}
+.blurt-review-item label b{font-size:14px;line-height:1.55}
+.blurt-review-item label small,.blurt-second-prompts small{font-size:12px;line-height:1.55;color:var(--muted)}
+.blurt-model-toggle{margin:12px 0 0 30px;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;color:var(--accent)!important;font-size:12px}
+.blurt-model{padding:8px 0 0 30px}
+.blurt-model h4{font-size:12px;margin:10px 0 2px;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.blurt-model p{font-size:13px;line-height:1.6;margin:2px 0}
+.blurt-review-actions{display:flex;gap:12px;justify-content:flex-end;padding:22px 0 8px}
+.blurt-second-screen{gap:18px}
+.blurt-second-prompts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 30px}
+.blurt-second-prompts>div{display:flex;flex-direction:column;gap:4px;padding:12px 0;border-bottom:1px solid var(--line)}
+.blurt-second-prompts b{font-size:13px}
+.blurt-second-screen .blurt-canvas{min-height:220px}
+.blurt-results-screen{align-items:center;justify-content:center;text-align:center}
+.blurt-result-score{font-size:clamp(72px,12vw,140px);font-weight:850;line-height:1;letter-spacing:-5px;margin:12px 0}
+.blurt-results-screen>p{color:var(--muted)}
+.blurt-result-stats{width:min(100%,650px);display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:30px 0}
+.blurt-result-stats>div{display:flex;flex-direction:column;gap:5px;padding:16px 8px;border-top:1px solid var(--line)}
+.blurt-result-stats b{font-size:27px}
+.blurt-result-stats span{font-size:12px;color:var(--muted)}
+@media(max-width:760px){
+ body.activity-session #reviseArea{padding:calc(14px + env(safe-area-inset-top)) 16px calc(22px + env(safe-area-inset-bottom))!important}
+ body.activity-session #reviseArea>.blurt-experience,body.activity-session #reviseArea>.blurt-review-screen,body.activity-session #reviseArea>.blurt-second-screen,body.activity-session #reviseArea>.blurt-results-screen{min-height:calc(100svh - 100px)}
+ .blurt-session-bar{align-items:flex-start;flex-direction:column;padding-bottom:16px}
+ .blurt-timer-tools{width:100%;justify-content:flex-start}
+ .blurt-workspace{grid-template-columns:1fr;min-height:0;gap:18px;padding:15px 0}
+ .blurt-canvas{min-height:40svh;font-size:16px!important}
+ .blurt-writing-foot{align-items:flex-start;flex-direction:column}
+ .blurt-guidance{border-left:0;border-top:1px solid var(--line);padding:18px 0 0}
+ .blurt-lens-list{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:12px}
+ .blurt-lens{grid-template-columns:20px 1fr 12px;padding:10px 2px!important}
+ .blurt-lens b{font-size:12px}
+ .blurt-lens-hint{min-height:0}
+ .blurt-guidance-note{margin-top:14px}
+ .blurt-review-list,.blurt-second-prompts{grid-template-columns:1fr}
+ .blurt-review-actions{flex-direction:column}
+ .blurt-review-actions button{width:100%}
+ .blurt-result-stats{gap:5px}
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
@@ -1021,7 +1098,67 @@ function setupRevise(startMode='flash'){
   function mark(ok){const w=weak(),k=c.poem+'|'+c.quote;w[k]=ok?Math.max(0,(w[k]||0)-1):(w[k]||0)+1;if(!w[k])delete w[k];save(w);index=(index+1)%d.length;flash(1)}
   $('revMiss').onclick=()=>mark(false);$('revKnown').onclick=()=>mark(true);
  }
- function blurt(){const started=Date.now();let checked=[];const p=poems[0];mount(header('Blurting','Write everything you remember, then check your recall.')+'<section class="rev-panel"><div class="rev-panel-title"><div><span class="rev-kicker">RECALL SESSION</span><h3>Get your ideas down</h3><p>Quotes, methods, analysis, context and the writer’s message.</p></div></div><textarea id="revBlurtText" class="rev-writing" placeholder="Start writing from memory…"></textarea><button class="primary" id="revCheck">Check my recall</button><div id="revBlurtReview"></div></section>');$('revCheck').onclick=()=>{const targets=p[3]||[];$('revBlurtReview').innerHTML='<div class="rev-separator"></div><span class="rev-kicker">SELF-ASSESSMENT</span><h3>What did you remember?</h3><p>Tick each point you included. Your result helps identify what to revisit.</p>'+targets.map((x,i)=>'<label class="rev-check"><input type="checkbox" data-rev-target="'+i+'"><span><b>'+safe(x[0])+'</b><small>'+safe(x[1])+' · '+safe(x[2])+'</small></span></label>').join('')+'<div class="rev-actions"><button id="revMissed">Focus on missed points</button><button id="revSave" class="primary">Finish and save</button></div><p id="revBlurtMsg"></p>';$('revSave').onclick=async()=>{const n=area.querySelectorAll('[data-rev-target]:checked').length,r=await recordPracticeSession('blurting',1500,Math.round((Date.now()-started)/1000),p[0],targets.length?Math.round(n/targets.length*100):0,{total_questions:targets.length,correct_answers:n});$('revBlurtMsg').textContent=r?'Saved · +'+Number(r.xp_earned||1500).toLocaleString()+' XP':'Could not save this session.';$('revSave').disabled=true};$('revMissed').onclick=()=>{const missed=targets.filter((x,i)=>!area.querySelector('[data-rev-target="'+i+'"]').checked);$('revBlurtReview').innerHTML='<h3>Points to revisit</h3>'+(missed.length?missed.map(x=>'<div class="rev-missed"><b>'+safe(x[0])+'</b><p>'+safe(x[1])+' · '+safe(x[2])+'</p></div>').join(''):'<p>You recalled every point in the checklist.</p>')+'<textarea class="rev-writing" placeholder="Rewrite the missed points from memory…"></textarea>'}}}
+ function blurt(){
+  const started=Date.now();
+  const allTargets=poems.flatMap(p=>(p[3]||[]).map((x,i)=>({poem:p[0],quote:x[0],method:x[1],analysis:x[2],context:x[3]||''})));
+  const targets=[...allTargets].sort(()=>Math.random()-.5).slice(0,Math.min(10,allTargets.length));
+  let activeLens='Quotes',timerEnabled=false,remaining=300,timerId=null;
+  const lensHelp={
+   'Quotes':'Recall precise evidence from across the anthology. Think about the lines that best represent each poem.',
+   'Methods':'Name the language or structural choices the poet makes, and why those choices matter.',
+   'Analysis':'Explain individual words, images and shifts. Move from what the quote says to what it suggests.',
+   'Context':'Connect the poem to its speaker, situation and relevant social or historical ideas.',
+   'Wider message':'What does the poet want the reader to question, feel or understand?'
+  };
+  const stopTimer=()=>{if(timerId){clearInterval(timerId);timerId=null}};
+  const timerText=()=>String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
+  function renderWriting(){
+   mount(header('Blurting','A full-screen recall session. Work from memory, then check what you covered.')+
+    '<section class="blurt-experience">'+
+     '<div class="blurt-session-bar"><div><span class="rev-kicker">POWER &amp; CONFLICT · FULL ANTHOLOGY</span><h2>Empty page. Full recall.</h2><p>Get your ideas down before you look at any model answers.</p></div><div class="blurt-timer-tools"><button id="revTimerToggle">Start 5-minute timer</button><strong id="revTimer" class="hidden">05:00</strong></div></div>'+
+     '<div class="blurt-workspace">'+
+      '<section class="blurt-writing-area"><div class="blurt-writing-heading"><span class="rev-kicker">YOUR RECALL</span><span id="blurtWordCount">0 words</span></div><textarea id="revBlurtText" class="blurt-canvas" placeholder="Start with anything you remember: quotations, methods, analysis, context or the poet’s message…"></textarea><div class="blurt-writing-foot"><span>Write freely. Spelling and order do not matter yet.</span><button class="primary" id="revCheck">Check my recall <span aria-hidden="true">→</span></button></div></section>'+
+      '<aside class="blurt-guidance"><span class="rev-kicker">RECALL LENSES</span><h3>Give your memory a nudge</h3><p>Choose a lens to focus your thinking. You can move between them at any time.</p><div class="blurt-lens-list">'+Object.keys(lensHelp).map((x,i)=>'<button class="blurt-lens '+(x===activeLens?'active':'')+'" data-blurt-lens="'+safe(x)+'"><span>0'+(i+1)+'</span><b>'+safe(x)+'</b><span class="blurt-lens-mark">'+(x===activeLens?'•':'')+'</span></button>').join('')+'</div><div class="blurt-lens-hint" id="blurtLensHint">'+safe(lensHelp[activeLens])+'</div><div class="blurt-guidance-note">No model answers are shown until you finish your first recall round.</div></aside>'+
+     '</div>'+
+    '</section>');
+   const input=$('revBlurtText');
+   input.addEventListener('input',()=>{$('blurtWordCount').textContent=(input.value.trim().match(/\S+/g)||[]).length+' words'});
+   area.querySelectorAll('[data-blurt-lens]').forEach(btn=>btn.onclick=()=>{activeLens=btn.dataset.blurtLens;area.querySelectorAll('[data-blurt-lens]').forEach(x=>{x.classList.toggle('active',x===btn);x.querySelector('.blurt-lens-mark').textContent=x===btn?'•':''});$('blurtLensHint').textContent=lensHelp[activeLens]});
+   $('revTimerToggle').onclick=()=>{
+    if(timerEnabled){timerEnabled=false;stopTimer();$('revTimerToggle').textContent='Start 5-minute timer';$('revTimer').classList.add('hidden');remaining=300;return}
+    timerEnabled=true;remaining=300;$('revTimer').classList.remove('hidden');$('revTimer').textContent=timerText();$('revTimerToggle').textContent='Timer running';
+    timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);const el=$('revTimer');if(el)el.textContent=timerText();if(remaining===0){stopTimer();$('revTimerToggle').textContent='Time is up';$('revTimerToggle').disabled=true}},1000);
+   };
+   $('revCheck').onclick=()=>{const draft=input.value.trim();if(!draft){input.focus();input.setCustomValidity('Write a few ideas before checking your recall.');input.reportValidity();input.setCustomValidity('');return}showReview(draft)};
+  }
+  function showReview(draft){
+   stopTimer();
+   mount(header('Check your recall','Compare your first round with the knowledge points below. Mark only what you genuinely remembered.')+
+    '<section class="blurt-review-screen"><div class="blurt-review-intro"><span class="rev-kicker">ROUND 02 · SELF-ASSESSMENT</span><h2>What made it onto the page?</h2><p>Your writing is kept below so you can compare it with each point.</p><details class="blurt-draft"><summary>Review my first-round notes</summary><p>'+safe(draft).replace(/\n/g,'<br>')+'</p></details></div>'+
+    '<div class="blurt-review-list">'+targets.map((x,i)=>'<article class="blurt-review-item"><label><input type="checkbox" data-blurt-target="'+i+'"><span><b>'+safe(x.poem)+' · “'+safe(x.quote)+'”</b><small>Tick if you recalled this quotation or its key idea.</small></span></label><button class="blurt-model-toggle" data-blurt-model="'+i+'" aria-expanded="false">Reveal model</button><div class="blurt-model hidden" id="blurtModel'+i+'"><h4>Method</h4><p>'+safe(x.method)+'</p><h4>Analysis</h4><p>'+safe(x.analysis)+'</p><h4>Context &amp; wider message</h4><p>'+safe(x.context||'Connect the quotation to the poem’s wider ideas.')+'</p></div></article>').join('')+'</div>'+
+    '<div class="blurt-review-actions"><button id="revMissed">Build a second round from missed points</button><button id="revSave" class="primary">Finish session</button></div><p id="revBlurtMsg" aria-live="polite"></p></section>');
+   area.querySelectorAll('[data-blurt-model]').forEach(btn=>btn.onclick=()=>{const el=$('blurtModel'+btn.dataset.blurtModel);const open=el.classList.toggle('hidden')===false;btn.textContent=open?'Hide model':'Reveal model';btn.setAttribute('aria-expanded',String(open))});
+   $('revMissed').onclick=()=>{const missed=targets.filter((x,i)=>!area.querySelector('[data-blurt-target="'+i+'"]').checked);secondRound(missed,draft)};
+   $('revSave').onclick=()=>saveResult(targets,draft);
+  }
+  function secondRound(missed,draft){
+   const work=missed.length?missed:targets;
+   mount(header('Second round','Rebuild the points you missed, without copying the model.')+
+    '<section class="blurt-second-screen"><div><span class="rev-kicker">ROUND 03 · TARGETED RECALL</span><h2>'+(missed.length?'Turn missed points into strengths.':'You marked every point. Strengthen the explanations.')+'</h2><p>'+(missed.length?missed.length+' knowledge point(s) to revisit.':'Try writing the key explanations again in your own words.')+'</p></div><div class="blurt-second-prompts">'+work.map((x,i)=>'<div><b>'+safe(x.poem)+' · '+safe(x.quote)+'</b><small>Recall the method, effect and wider message.</small></div>').join('')+'</div><textarea id="blurtSecondDraft" class="blurt-canvas" placeholder="Rebuild the missed ideas in your own words…"></textarea><div class="blurt-writing-foot"><button id="blurtBackReview">Back to checklist</button><button class="primary" id="blurtFinishSecond">Finish and earn XP →</button></div></section>');
+   $('blurtBackReview').onclick=()=>showReview(draft);
+   $('blurtFinishSecond').onclick=()=>saveResult(targets,draft,missed.length,$('blurtSecondDraft').value.trim());
+  }
+  async function saveResult(items,draft,missedCount=null,secondDraft=''){
+   const checks=area.querySelectorAll('[data-blurt-target]:checked').length;
+   const accuracy=items.length?Math.round((missedCount===null?checks:items.length-missedCount)/items.length*100):0;
+   const elapsed=Math.max(1,Math.round((Date.now()-started)/1000));
+   const r=await recordPracticeSession('blurting',1500,elapsed,'Power & Conflict',accuracy,{total_questions:items.length,correct_answers:items.length-(missedCount??(items.length-checks)),first_round_words:(draft.match(/\S+/g)||[]).length,second_round_words:(secondDraft.match(/\S+/g)||[]).length,second_round:missedCount!==null});
+   mount(header('Session complete','Your recall has been recorded.')+'<section class="blurt-results-screen"><span class="rev-kicker">SESSION RESULTS</span><div class="blurt-result-score">'+accuracy+'%</div><h2>'+(accuracy>=80?'Strong recall. Keep building.':accuracy>=50?'Good foundation. Target the gaps.':'A useful first pass. Revisit the weak spots.')+'</h2><p>'+(r?'+'+Number(r.xp_earned||1500).toLocaleString()+' XP earned.':'Your session could not be saved, so XP has not been confirmed.')+'</p><div class="blurt-result-stats"><div><b>'+items.length+'</b><span>Knowledge points</span></div><div><b>'+Math.max(0,items.length-(missedCount??(items.length-checks)))+'</b><span>Recalled</span></div><div><b>'+elapsed+'s</b><span>Time spent</span></div></div><div class="row"><button id="blurtAgain">Try another round</button><button id="blurtExit" class="primary">Back to practice</button></div></section>');
+   $('blurtAgain').onclick=()=>{stopTimer();blurt()};
+   $('blurtExit').onclick=exit;
+  }
+  renderWriting();
+ }
  function explain(){const d=deckNow();if(!d.length)return;const c=d[index%d.length],steps=[['Main idea',c.context||c.poem+' explores its central ideas'],['Method',c.method],['Quotation',c.quote],['Analysis',c.analysis]],v=steps[stage];mount(header('Explain it','Build a complete analysis in four short steps.')+bar(stage+1,4)+'<section class="rev-panel"><span class="rev-kicker">STEP '+(stage+1)+' OF 4</span><h3>Recall the '+v[0].toLowerCase()+'</h3><p>Try to explain it in your own words before revealing the model answer.</p><button class="primary" id="revReveal">Reveal model answer</button><div id="revModel" class="rev-model hidden">'+learningPoints(v[1])+'</div><div class="rev-actions"><button id="revNotYet">Need more practice</button><button id="revRemember" class="primary">I remembered it</button></div></section>');$('revReveal').onclick=()=>$('revModel').classList.remove('hidden');const move=ok=>{const w=weak(),k=c.poem+'|'+c.quote;w[k]=ok?Math.max(0,(w[k]||0)-1):(w[k]||0)+1;if(!w[k])delete w[k];save(w);if(stage===3){stage=0;index++}else stage++;explain()};$('revNotYet').onclick=()=>move(false);$('revRemember').onclick=()=>move(true)}
  function startQuiz(){const d=deckNow();if(!d.length)return;const items=[...d].sort(()=>Math.random()-.5).slice(0,Math.min(quizAmount,d.length));quiz={i:0,score:0,start:Date.now(),items};ask()}
  function ask(){const c=quiz.items[quiz.i],opts=[c.poem,...poems.filter(p=>p[0]!==c.poem).sort(()=>Math.random()-.5).slice(0,3).map(p=>p[0])].sort(()=>Math.random()-.5);mount(header('Quick quiz','Choose the poem that matches the quotation.')+bar(quiz.i+1,quiz.items.length)+'<section class="rev-panel"><span class="rev-kicker">QUESTION '+(quiz.i+1)+' OF '+quiz.items.length+'</span><h3>Which poem does this quotation come from?</h3><blockquote class="rev-quiz-quote">“'+safe(c.quote)+'”</blockquote><div class="rev-options">'+opts.map((x,i)=>'<button data-rev-option="'+i+'">'+safe(x)+'</button>').join('')+'</div><div id="revFeedback"></div></section>');let done=false;area.querySelectorAll('[data-rev-option]').forEach((b,i)=>b.onclick=()=>{if(done)return;done=true;const ok=opts[i]===c.poem;if(ok)quiz.score++;area.querySelectorAll('[data-rev-option]').forEach(x=>{x.disabled=true;if(x.textContent===c.poem)x.classList.add('correct')});$('revFeedback').innerHTML='<p class="'+(ok?'rev-good':'rev-wrong')+'">'+(ok?'Correct.':'The answer is '+safe(c.poem)+'.')+'</p><p><b>Method:</b> '+safe(c.method)+'</p><p><b>Analysis:</b> '+safe(c.analysis)+'</p><button class="primary" id="revQNext">'+(quiz.i+1===quiz.items.length?'See results':'Next question')+'</button>';$('revQNext').onclick=()=>{quiz.i++;if(quiz.i<quiz.items.length)ask();else finishQuiz()}})}
