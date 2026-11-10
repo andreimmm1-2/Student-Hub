@@ -1841,16 +1841,17 @@ function practiceQuickQuiz(){
 
 function practiceMatchGaps(){
  const started=Date.now(),area=$('reviseArea'),all=practiceShuffle(practiceDeckData());
- let mode='matching',matchFormat='quote-poem',gapFormat='typed',rapid=false,timed=false;
+ let mode='matching',matchFormat='quote-poem',matchInteraction='tap',gapFormat='typed',rapid=false,timed=false;
  let remaining=180,tick=null,items=[],rightOrder=[],matched=[],selected=null,attempts=[],questionIndex=0,score=0;
  function renderSetup(){
   practiceMount(practiceHeader('Match Up & Fill the Gaps','Choose a matching challenge or fill-the-gap round. Both can be played in rapid-fire mode.')+
    '<section class="match-setup"><span class="rev-kicker">CHOOSE YOUR CHALLENGE</span><h2>Make the connections.</h2><div class="match-mode-grid"><button data-game-mode="matching" class="selected"><b>Match Up</b><small>Pair quotations, methods and contexts with their correct match.</small></button><button data-game-mode="gaps"><b>Fill the Gaps</b><small>Complete exact quotations using typed or multiple-choice answers.</small></button></div>'+
-   '<div class="match-settings-grid"><section id="matchingSettings"><h3>Matching format</h3><label><input type="radio" name="matchFormat" value="quote-poem" checked> Quote → poem</label><label><input type="radio" name="matchFormat" value="method-analysis"> Method → explanation</label><label><input type="radio" name="matchFormat" value="context-poem"> Context → poem</label></section><section id="gapSettings" class="hidden"><h3>Answer format</h3><label><input type="radio" name="gapFormat" value="typed" checked> Type the missing word</label><label><input type="radio" name="gapFormat" value="choice"> Choose from options</label></section></div>'+
-   '<div class="match-session-options"><label><input type="checkbox" id="matchRapid"> Rapid-fire · 60 seconds</label><label><input type="checkbox" id="matchTimed"> Optional 3-minute timer</label></div><div class="match-setup-footer"><span>Match formats: 3 · Gap formats: 2 · XP: 1,200+</span><button class="primary" id="matchStart">Start challenge →</button></div></section>');
+   '<div class="match-settings-grid"><section id="matchingSettings"><h3>Matching format</h3><label><input type="radio" name="matchFormat" value="quote-poem" checked> Quote → poem</label><label><input type="radio" name="matchFormat" value="method-analysis"> Method → explanation</label><label><input type="radio" name="matchFormat" value="context-poem"> Context → poem</label><label><input type="radio" name="matchFormat" value="theme-quote"> Theme → quotation</label><h3>How do you want to match?</h3><label><input type="radio" name="matchInteraction" value="tap" checked> Tap-to-match</label><label><input type="radio" name="matchInteraction" value="drag"> Drag-and-drop</label></section><section id="gapSettings" class="hidden"><h3>Answer format</h3><label><input type="radio" name="gapFormat" value="typed" checked> Type the missing word</label><label><input type="radio" name="gapFormat" value="choice"> Choose from options</label></section></div>'+
+   '<div class="match-session-options"><label><input type="checkbox" id="matchRapid"> Rapid-fire · 60 seconds</label><label><input type="checkbox" id="matchTimed"> Optional 3-minute timer</label></div><div class="match-setup-footer"><span>Match formats: 4 · Interaction: tap or drag · Gap formats: 2 · XP: 1,200+</span><button class="primary" id="matchStart">Start challenge →</button></div></section>');
   area.querySelectorAll('[data-game-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.gameMode;area.querySelectorAll('[data-game-mode]').forEach(x=>x.classList.toggle('selected',x===b));$('matchingSettings').classList.toggle('hidden',mode!=='matching');$('gapSettings').classList.toggle('hidden',mode!=='gaps')});
   $('matchStart').onclick=()=>{
    matchFormat=area.querySelector('input[name="matchFormat"]:checked')?.value||'quote-poem';
+   matchInteraction=area.querySelector('input[name="matchInteraction"]:checked')?.value||'tap';
    gapFormat=area.querySelector('input[name="gapFormat"]:checked')?.value||'typed';
    rapid=$('matchRapid').checked;timed=rapid||$('matchTimed').checked;remaining=rapid?60:180;
    if(mode==='matching')startMatching();else startGaps();
@@ -1868,6 +1869,7 @@ function practiceMatchGaps(){
    let left,right;
    if(matchFormat==='method-analysis'){left=c.method||'Method';right=c.analysis||c.context||'Explanation';}
    else if(matchFormat==='context-poem'){left=c.context||c.theme||c.analysis;right=c.poem;}
+   else if(matchFormat==='theme-quote'){left=c.theme||'Wider theme';right='“'+c.quote+'”';}
    else{left='“'+c.quote+'”';right=c.poem;}
    return {id:'pair-'+i,poem:c.poem,left,right,explanation:c.analysis};
   });
@@ -1880,14 +1882,24 @@ function practiceMatchGaps(){
   const right=rightOrder.filter(x=>!matched.includes(x.id));
   practiceMount(practiceHeader('Match Up',rapid?'Rapid-fire · match as many pairs as you can.':'Choose one item on the left, then its match on the right.')+
    '<section class="match-play-screen"><div class="match-play-meta"><span class="rev-kicker">'+matchFormat.replace('-',' → ').toUpperCase()+'</span><span>'+matched.length+' / '+items.length+' pairs matched</span>'+(timed?'<strong class="quiz-clock" id="matchClock">'+timerText()+'</strong>':'')+'</div>'+practiceProgressBar(matched.length,items.length)+
-   '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-match-left="'+x.id+'">'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="matchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="matchEnd">Finish early</button><button id="matchReset" class="quiet-button">Reset pair selection</button></div></section>');
-  area.querySelectorAll('[data-match-left]').forEach(b=>b.onclick=()=>{selected=b.dataset.matchLeft;drawMatching()});
-  area.querySelectorAll('[data-match-right]').forEach(b=>b.onclick=()=>{
-   const rightId=b.dataset.matchRight;if(!selected){$('matchStatus').textContent='Choose an item on the left first.';return}
+   '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-match-left="'+x.id+'" '+(matchInteraction==='drag'?'draggable="true"':'')+'>'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="matchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="matchEnd">Finish early</button><button id="matchReset" class="quiet-button">Reset pair selection</button></div></section>');
+  const tryPair=rightId=>{
+   if(!selected){$('matchStatus').textContent='Choose an item on the left first.';return}
    const source=items.find(x=>x.id===selected),success=selected===rightId;
    attempts.push({left:source?.left,right:items.find(x=>x.id===rightId)?.right,correct:success,poem:source?.poem});
    if(success){matched.push(selected);selected=null;if(matched.length===items.length){finishMatching(false);return}drawMatching();$('matchStatus').textContent='Pair matched.'}
    else{selected=null;drawMatching();$('matchStatus').textContent='Not a match. Try another connection.'}
+  };
+  area.querySelectorAll('[data-match-left]').forEach(b=>{
+   b.onclick=()=>{selected=b.dataset.matchLeft;drawMatching()};
+   if(matchInteraction==='drag')b.ondragstart=e=>{e.dataTransfer.setData('text/plain',b.dataset.matchLeft);e.dataTransfer.effectAllowed='move'};
+  });
+  area.querySelectorAll('[data-match-right]').forEach(b=>{
+   b.onclick=()=>tryPair(b.dataset.matchRight);
+   if(matchInteraction==='drag'){
+    b.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move'};
+    b.ondrop=e=>{e.preventDefault();selected=e.dataTransfer.getData('text/plain');tryPair(b.dataset.matchRight)};
+   }
   });
   $('matchEnd').onclick=()=>finishMatching(false);
   $('matchReset').onclick=()=>{selected=null;drawMatching()};
