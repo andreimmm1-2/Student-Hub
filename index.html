@@ -1011,6 +1011,18 @@ body.activity-session #reviseArea>.blurt-experience,body.activity-session #revis
  .blurt-result-stats{gap:5px}
 }
 
+
+/* Hard viewport lock: override older max-width caps that constrained the task to a column. */
+body.activity-session #reviseArea{
+ position:fixed!important;inset:0!important;top:0!important;right:0!important;bottom:0!important;left:0!important;
+ width:100vw!important;min-width:100vw!important;max-width:none!important;
+ height:100vh!important;height:100dvh!important;min-height:100vh!important;max-height:none!important;
+ margin:0!important;box-sizing:border-box!important;transform:none!important;z-index:2147483000!important;
+}
+body.activity-session .wrap,body.activity-session #app,body.activity-session #page{
+ max-width:none!important;width:100%!important;margin:0!important;padding:0!important;
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
@@ -1069,7 +1081,7 @@ function setupRevise(startMode='flash'){
  const save=w=>localStorage.setItem('rc-weak-'+user.id,JSON.stringify(w));
  const safe=v=>escape(String(v??''));
  function deckNow(){const q=Object.entries(exactNotes).flatMap(([poem,items])=>items.map((x,i)=>({poem,quote:x[0],method:x[1],analysis:(x[2]||[]).join(' '),context:poems.find(p=>p[0]===poem)?.[3]?.[i]?.[3]||x[2]?.[0]||''})));const c=poems.flatMap(p=>(p[3]||[]).map(x=>({poem:p[0],quote:x[0],method:x[1],analysis:x[2],context:x[3]||''})));return kind==='context'?c:q}
- function exit(){document.body.classList.remove('activity-session','flash-wizard-active');page='practice';render()}
+ function exit(){if(window.rcBlurtTimerId){clearInterval(window.rcBlurtTimerId);window.rcBlurtTimerId=null}document.body.classList.remove('activity-session','flash-wizard-active');page='practice';render()}
  function header(title,desc){return '<div class="activity-top"><div class="activity-heading"><span class="activity-brand">REVISION CLUB · PRACTICE</span><h1>'+title+'</h1><p>'+desc+'</p></div><button id="revExit" class="activity-exit">Exit session</button></div>'}
  function bar(n,total){return '<div class="rev-progress"><span style="width:'+Math.round(n/total*100)+'%"></span></div>'}
  function mount(html){document.body.classList.add('activity-session');document.body.classList.remove('flash-wizard-active');area.innerHTML=html;$('revExit')?.addEventListener('click',exit)}
@@ -1110,12 +1122,12 @@ function setupRevise(startMode='flash'){
    'Context':'Connect the poem to its speaker, situation and relevant social or historical ideas.',
    'Wider message':'What does the poet want the reader to question, feel or understand?'
   };
-  const stopTimer=()=>{if(timerId){clearInterval(timerId);timerId=null}};
+  const stopTimer=()=>{if(timerId){clearInterval(timerId);timerId=null}window.rcBlurtTimerId=null};
   const timerText=()=>String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
   function renderWriting(){
    mount(header('Blurting','A full-screen recall session. Work from memory, then check what you covered.')+
     '<section class="blurt-experience">'+
-     '<div class="blurt-session-bar"><div><span class="rev-kicker">POWER &amp; CONFLICT · FULL ANTHOLOGY</span><h2>Empty page. Full recall.</h2><p>Get your ideas down before you look at any model answers.</p></div><div class="blurt-timer-tools"><button id="revTimerToggle">Start 5-minute timer</button><strong id="revTimer" class="hidden">05:00</strong></div></div>'+
+     '<div class="blurt-session-bar"><div><span class="rev-kicker">POWER &amp; CONFLICT · RANDOM RECALL SET</span><h2>Empty page. Full recall.</h2><p>Get your ideas down before you look at any model answers.</p></div><div class="blurt-timer-tools"><button id="revTimerToggle">Start 5-minute timer</button><strong id="revTimer" class="hidden">05:00</strong></div></div>'+
      '<div class="blurt-workspace">'+
       '<section class="blurt-writing-area"><div class="blurt-writing-heading"><span class="rev-kicker">YOUR RECALL</span><span id="blurtWordCount">0 words</span></div><textarea id="revBlurtText" class="blurt-canvas" placeholder="Start with anything you remember: quotations, methods, analysis, context or the poet’s message…"></textarea><div class="blurt-writing-foot"><span>Write freely. Spelling and order do not matter yet.</span><button class="primary" id="revCheck">Check my recall <span aria-hidden="true">→</span></button></div></section>'+
       '<aside class="blurt-guidance"><span class="rev-kicker">RECALL LENSES</span><h3>Give your memory a nudge</h3><p>Choose a lens to focus your thinking. You can move between them at any time.</p><div class="blurt-lens-list">'+Object.keys(lensHelp).map((x,i)=>'<button class="blurt-lens '+(x===activeLens?'active':'')+'" data-blurt-lens="'+safe(x)+'"><span>0'+(i+1)+'</span><b>'+safe(x)+'</b><span class="blurt-lens-mark">'+(x===activeLens?'•':'')+'</span></button>').join('')+'</div><div class="blurt-lens-hint" id="blurtLensHint">'+safe(lensHelp[activeLens])+'</div><div class="blurt-guidance-note">No model answers are shown until you finish your first recall round.</div></aside>'+
@@ -1127,7 +1139,7 @@ function setupRevise(startMode='flash'){
    $('revTimerToggle').onclick=()=>{
     if(timerEnabled){timerEnabled=false;stopTimer();$('revTimerToggle').textContent='Start 5-minute timer';$('revTimer').classList.add('hidden');remaining=300;return}
     timerEnabled=true;remaining=300;$('revTimer').classList.remove('hidden');$('revTimer').textContent=timerText();$('revTimerToggle').textContent='Timer running';
-    timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);const el=$('revTimer');if(el)el.textContent=timerText();if(remaining===0){stopTimer();$('revTimerToggle').textContent='Time is up';$('revTimerToggle').disabled=true}},1000);
+    timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);const el=$('revTimer');if(el)el.textContent=timerText();if(remaining===0){stopTimer();$('revTimerToggle').textContent='Time is up';$('revTimerToggle').disabled=true}},1000);window.rcBlurtTimerId=timerId;
    };
    $('revCheck').onclick=()=>{const draft=input.value.trim();if(!draft){input.focus();input.setCustomValidity('Write a few ideas before checking your recall.');input.reportValidity();input.setCustomValidity('');return}showReview(draft)};
   }
