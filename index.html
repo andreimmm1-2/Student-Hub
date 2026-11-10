@@ -1217,12 +1217,13 @@ function practiceBlurting(){
    missed.map((c,i)=>'<article class="blurt-second-prompt"><b>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</b><textarea class="field" rows="3" data-second-draft="'+i+'" placeholder="Recall the method, effect and wider message…"></textarea><label><input type="checkbox" data-second-check="'+i+'"> I rebuilt this point accurately</label></article>').join('')+
    '<div class="blurt-review-actions"><button id="blurtBackReview">Back to review</button><button id="blurtFinishSecond" class="primary">Finish second round →</button></div></section>');
   $('blurtBackReview').onclick=()=>showReview(draft,guided);
-  $('blurtFinishSecond').onclick=()=>saveBlurting(draft,guided,missed,[...area.querySelectorAll('[data-second-draft]')].map(x=>x.value).join('\n'));
+  $('blurtFinishSecond').onclick=()=>saveBlurting(draft,guided,missed,[...area.querySelectorAll('[data-second-draft]')].map(x=>x.value).join('\n'),allRemembered);
  }
- async function saveBlurting(draft,guided,secondItems,secondDraft){
+ async function saveBlurting(draft,guided,secondItems,secondDraft,allRemembered=false){
   const checks=[...$('reviseArea').querySelectorAll('[data-blurt-check]:checked')].length;
   const secondChecks=[...$('reviseArea').querySelectorAll('[data-second-check]:checked')].length;
-  const firstScore=checks,finalScore=secondItems?Math.min(targets.length,checks+secondChecks):checks;
+  const firstRecall=secondItems?(allRemembered?targets.length:Math.max(0,targets.length-secondItems.length)):checks;
+  const finalScore=secondItems?Math.min(targets.length,firstRecall+secondChecks):checks;
   const accuracy=targets.length?Math.round(finalScore/targets.length*100):0;
   const detail='<div class="practice-result-grid"><div><b>'+finalScore+'</b><span>Recalled</span></div><div><b>'+Math.max(0,targets.length-finalScore)+'</b><span>Still to revisit</span></div><div><b>'+accuracy+'%</b><span>Recall score</span></div></div><div class="practice-result-columns"><section><h3>Free writing</h3><p>'+(draft?(draft.match(/\S+/g)||[]).length+' words written':'No free-writing notes entered')+'</p></section><section><h3>Guided prompts</h3><p>'+guided.filter(x=>x.method||x.effect||x.message).length+' of '+guided.length+' completed</p></section></div><p>'+(secondItems?'Second-round rebuild: '+secondChecks+' point(s) self-checked as secure.':'You can use the missed-point second round next time to strengthen recall.')+'</p>';
   await practiceAward('blurting',finalScore,'Power & Conflict',accuracy,{total_questions:targets.length,correct_answers:finalScore,first_round_words:(draft.match(/\S+/g)||[]).length,guided_completed:guided.filter(x=>x.method||x.effect||x.message).length,second_round:!!secondItems,second_round_words:(secondDraft.match(/\S+/g)||[]).length},'Your recall results',finalScore+' of '+targets.length+' knowledge points recalled',detail,started,practiceBlurting);
@@ -1231,12 +1232,12 @@ function practiceBlurting(){
 }
 
 function practiceMindMaps(){
- const started=Date.now();
+ const started=Date.now(),area=$('reviseArea');
  let mapId=null,mapTitle='My revision map',mapTopic=poems[0]?.[0]||'Power & Conflict',mapTheme='blue';
  let nodes=[],edges=[],connectFrom=null,nodeCounter=0;
  const themes={blue:'#315f91',teal:'#187b70',amber:'#a56b35',slate:'#4c5966'};
  function makeNode(label,detail,x,y,color){
-  nodeCounter++;return {id:'node-'+nodeCounter,label:label||'New branch',detail:detail||'',x,y,color:color||'blue'};
+  nodeCounter++;return {id:'node-'+Date.now().toString(36)+'-'+nodeCounter,label:label||'New branch',detail:detail||'',x,y,color:color||'blue'};
  }
  function createNodes(method,poemName){
   const p=poems.find(x=>x[0]===poemName)||poems[0];
@@ -1375,7 +1376,7 @@ function practiceMindMaps(){
 }
 
 function practiceQuickQuiz(){
- const started=Date.now(),all=practiceShuffle(practiceDeckData());
+ const started=Date.now(),area=$('reviseArea'),all=practiceShuffle(practiceDeckData());
  let questions=[],answers=[],position=0,difficulty='core',feedbackStyle='immediate',timed=false,remaining=240,quizTimer=null;
  function renderSetup(){
   practiceMount(practiceHeader('Quick Quiz','Choose the formats, difficulty and feedback style for your round.')+
