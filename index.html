@@ -451,6 +451,89 @@ button:disabled{transform:none!important}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;animation-iteration-count:1!important}
 }
+
+/* Consistent breathing room: keep every boxed surface away from its text. */
+.card,
+.subject-hero,
+.subject-card,
+.page-heading,
+.hub-tile,
+.learn-welcome,
+.learn-area,
+.learn-matrix,
+.poem-library-grid .poem,
+.practice-activity-choice,
+.flash-wizard,
+.flash-wizard-panel,
+.flash-ready-card,
+.flash-study-card,
+.flash-front,
+.flash-back,
+.flash-back-scroll,
+.feedback,
+.auth,
+.duel-panel,
+.practice-tabs,
+.practice-card,
+.activity-card,
+.quiz-card,
+.blurt-card,
+.progress-stats .card,
+.announcement-feed .card,
+.admin-layout .card,
+.community-layout .card {
+  padding:clamp(20px,3vw,30px)!important;
+}
+.card > :first-child,
+.subject-hero > :first-child,
+.subject-card > :first-child,
+.learn-welcome > :first-child,
+.learn-matrix > :first-child,
+.practice-activity-choice > :first-child,
+.flash-wizard-panel > :first-child,
+.flash-ready-card > :first-child,
+.flash-study-card > :first-child,
+.feedback > :first-child {
+  margin-top:0;
+}
+.card > :last-child,
+.subject-hero > :last-child,
+.subject-card > :last-child,
+.learn-welcome > :last-child,
+.learn-matrix > :last-child,
+.practice-activity-choice > :last-child,
+.flash-wizard-panel > :last-child,
+.flash-ready-card > :last-child,
+.flash-study-card > :last-child,
+.feedback > :last-child {
+  margin-bottom:0;
+}
+.card p,.subject-card p,.learn-welcome p,.practice-activity-choice p,
+.flash-wizard-panel p,.flash-ready-card p,.flash-study-card p,
+.feedback p,.page-heading p {
+  line-height:1.7;
+  overflow-wrap:anywhere;
+}
+.card ul,.card ol,.learn-matrix ul,.flash-back ul,.flash-back-scroll ul {
+  padding-left:1.5em!important;
+  margin:12px 0 18px!important;
+}
+.card li,.learn-matrix li,.flash-back li,.flash-back-scroll li {
+  padding:4px 0 7px!important;
+  line-height:1.75!important;
+}
+@media(max-width:650px) {
+  .card,.subject-hero,.subject-card,.learn-welcome,.learn-area,
+  .learn-matrix,.poem-library-grid .poem,.practice-activity-choice,
+  .flash-wizard,.flash-wizard-panel,.flash-ready-card,.flash-study-card,
+  .flash-front,.flash-back,.flash-back-scroll,.feedback,.auth,
+  .duel-panel,.practice-card,.activity-card,.quiz-card,.blurt-card,
+  .progress-stats .card,.announcement-feed .card,.admin-layout .card,
+  .community-layout .card {
+    padding:20px!important;
+  }
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav" aria-label="Main navigation"><button data-page="home">Home</button><button data-page="learn">Learn</button><button data-page="practice">Practice</button><button data-page="community">Community</button><button data-page="progress">Progress</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
