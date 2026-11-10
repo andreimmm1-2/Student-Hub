@@ -1074,108 +1074,160 @@ else if(page==='leaderboard'){p.innerHTML='<button data-go="home">← Home</butt
 else if(page==='subjects'){p.innerHTML='<button data-go="home">← Back</button>'+shell('Your subjects','Pick a subject area, then choose a course or topic. No giant mixed list.')+'<div class="subject-tabs"><button class="active" data-subject-tab="english">English</button><button data-subject-tab="maths">Maths</button><button data-subject-tab="science">Science</button><button data-subject-tab="humanities">Humanities</button></div><div id="subjectCourses" class="subject-course-grid"><article class="card subject-course"><span class="pill">GCSE · ENGLISH LITERATURE</span><h3>Power &amp; Conflict poetry</h3><p>Poem library, quote analysis, themes and comparison work.</p><button class="primary" data-go="learn">Open course →</button></article><article class="card subject-course"><span class="pill">REVISION TOOLS</span><h3>Targeted practice</h3><p>Use flashcards, quizzes, blurting and progression to test your recall.</p><button data-go="practice">Open practice →</button></article></div>'}}
 $('page').onclick=e=>{const b=e.target.closest('[data-go],[data-open],[data-subject],[data-poem],[data-stage],[data-quote],[data-poem-filter],[data-subject-tab]');if(!b)return;if(b.dataset.poemFilter!==undefined){document.querySelectorAll('[data-poem-filter]').forEach(x=>x.classList.toggle('active',x===b));document.querySelectorAll('[data-poem-theme]').forEach(x=>x.classList.toggle('hidden',b.dataset.poemFilter!=='all'&&x.dataset.poemTheme!==b.dataset.poemFilter));return}if(b.dataset.subjectTab){const tab=b.dataset.subjectTab;document.querySelectorAll('[data-subject-tab]').forEach(x=>x.classList.toggle('active',x===b));const data={english:'<article class="card subject-course"><span class="pill">GCSE · ENGLISH LITERATURE</span><h3>Power &amp; Conflict poetry</h3><p>Poem library, quote analysis, themes and comparison work.</p><button class="primary" data-go="learn">Open course →</button></article><article class="card subject-course"><span class="pill">REVISION TOOLS</span><h3>Targeted practice</h3><p>Flashcards, quizzes, blurting and progression.</p><button data-go="practice">Open practice →</button></article>',maths:'<article class="card subject-course"><span class="pill">MATHS</span><h3>Maths topics</h3><p>A dedicated topic pathway is ready to be added here.</p><span class="pill">Coming soon</span></article>',science:'<article class="card subject-course"><span class="pill">SCIENCE</span><h3>Biology</h3><p>Biology topic pathway.</p><span class="pill">Coming soon</span></article><article class="card subject-course"><span class="pill">SCIENCE</span><h3>Chemistry &amp; Physics</h3><p>Separate topic pathways for each subject.</p><span class="pill">Coming soon</span></article>',humanities:'<article class="card subject-course"><span class="pill">HUMANITIES</span><h3>History</h3><p>History topics and revision notes.</p><span class="pill">Coming soon</span></article><article class="card subject-course"><span class="pill">HUMANITIES</span><h3>Geography</h3><p>Geography topics and revision notes.</p><span class="pill">Coming soon</span></article>'};$('subjectCourses').innerHTML=data[tab];return}if(b.dataset.quote!==undefined){window.currentQuote=Number(b.dataset.quote);studyStage=0;render();return}if(b.dataset.stage!==undefined){studyStage=Number(b.dataset.stage);render();return}if(b.dataset.poem!==undefined){window.currentPoem=Number(b.dataset.poem);window.currentQuote=0;studyStage=0;page='poem';render();window.scrollTo({top:0,behavior:'smooth'});return}if(b.dataset.go||b.dataset.open){page=b.dataset.go||b.dataset.open;document.body.classList.toggle('immersive',page==='revise');document.querySelectorAll('#nav button').forEach(x=>x.classList.toggle('active',x.dataset.page===page));render();window.scrollTo({top:0,behavior:'smooth'});return}if(b.dataset.subject==='english'){page='learn';render();window.scrollTo({top:0,behavior:'smooth'});return}if(b.dataset.subject){const d=$('subjectdetail');if(d){const key=b.dataset.subject;const info={english:['English Literature','Power & Conflict poetry, Macbeth and quotation analysis.','Poem library','Flashcards & quizzes'],maths:['Maths','Maths topic pages are a separate build step.','Topic directory','Practice area'],science:['Science','Biology, Chemistry and Physics sections.','Biology','Chemistry & Physics'],more:['More subjects','Choose another course to add to your personal hub.','History','Geography']}[key];d.innerHTML='<span class="pill">SUBJECT SECTION</span><h3>'+info[0]+'</h3><p>'+info[1]+'</p><div class="quick-links"><button data-open="'+(key==='english'?'learn':'revise')+'">'+info[2]+'</button><button data-open="revise">'+info[3]+'</button></div>';d.scrollIntoView({behavior:'smooth',block:'nearest'})}}};
 
-function setupRevise(startMode='flash'){
- let mode=startMode,kind='quotes',index=0,revealed=false,stage=0,quiz=null,quizAmount=8;
- const area=$('reviseArea');
- const weak=()=>{try{return JSON.parse(localStorage.getItem('rc-weak-'+user.id)||'{}')}catch{return {}}};
- const save=w=>localStorage.setItem('rc-weak-'+user.id,JSON.stringify(w));
- const safe=v=>escape(String(v??''));
- function deckNow(){const q=Object.entries(exactNotes).flatMap(([poem,items])=>items.map((x,i)=>({poem,quote:x[0],method:x[1],analysis:(x[2]||[]).join(' '),context:poems.find(p=>p[0]===poem)?.[3]?.[i]?.[3]||x[2]?.[0]||''})));const c=poems.flatMap(p=>(p[3]||[]).map(x=>({poem:p[0],quote:x[0],method:x[1],analysis:x[2],context:x[3]||''})));return kind==='context'?c:q}
- function exit(){if(window.rcBlurtTimerId){clearInterval(window.rcBlurtTimerId);window.rcBlurtTimerId=null}document.body.classList.remove('activity-session','flash-wizard-active');page='practice';render()}
- function header(title,desc){return '<div class="activity-top"><div class="activity-heading"><span class="activity-brand">REVISION CLUB · PRACTICE</span><h1>'+title+'</h1><p>'+desc+'</p></div><button id="revExit" class="activity-exit">Exit session</button></div>'}
- function bar(n,total){return '<div class="rev-progress"><span style="width:'+Math.round(n/total*100)+'%"></span></div>'}
- function mount(html){document.body.classList.add('activity-session');document.body.classList.remove('flash-wizard-active');area.innerHTML=html;$('revExit')?.addEventListener('click',exit)}
- function draw(){if(mode==='flash')flash();else if(mode==='blurt')blurt();else if(mode==='quiz')startQuiz();else explain()}
- function flash(direction=1){
-  const d=deckNow();
-  if(!d.length){mount(header('Flashcards','There are no quotation cards available yet.')+'<section class="rev-panel"><p>Add quote notes to your course library to build this deck.</p></section>');return}
-  index=(index+d.length)%d.length;
-  const c=d[index],miss=weak()[c.poem+'|'+c.quote]||0;
-  mount(header('Flashcards','Tap the card to turn it over. Recall the method, analysis and wider message.')+
-   '<div class="rev-count"><span>CARD '+(index+1)+' OF '+d.length+'</span><span>'+(miss?'REVISIT THIS CARD':'IN YOUR DECK')+'</span></div>'+
-   bar(index+1,d.length)+
-   '<div class="flash-stage"><div class="flash-flipper '+(direction<0?'card-in-prev':'card-in-next')+'" id="flashFlipper" role="button" tabindex="0" aria-pressed="false" aria-label="Flashcard. Press to reveal the answer.">'+
-    '<article class="flash-face flash-front"><div class="row"><span class="flash-kicker">RECALL</span><span class="flash-kicker">'+safe(c.poem)+'</span></div><span class="flash-kicker">QUOTE '+(index+1)+'</span><blockquote class="quote">“'+safe(c.quote)+'”</blockquote><div class="tap-cue">Tap or press Enter to flip</div></article>'+
-    '<article class="flash-face flash-back" aria-hidden="true"><div class="flash-back-scroll"><span class="flash-kicker">THE BREAKDOWN</span><h3>Method</h3>'+learningPoints(c.method)+'<h3>Analysis</h3>'+learningPoints(c.analysis)+(c.context?'<h3>Context &amp; wider message</h3>'+learningPoints(c.context):'')+'</div><div class="tap-cue">Tap to return to the quotation</div></article>'+
-   '</div></div>'+
-   '<div class="row flash-navigation"><button id="revPrev">Previous card</button><button id="revShuffle">Shuffle deck</button><button id="revNext" class="primary">Next card</button></div>'+
-   '<div class="row rating-controls"><span>How well did you remember it?</span><button id="revMiss">Needs practice</button><button id="revKnown" class="primary">Got it</button></div>');
-  const flipper=$('flashFlipper');
-  const flip=()=>{flipper.classList.toggle('is-flipped');const turned=flipper.classList.contains('is-flipped');flipper.setAttribute('aria-pressed',String(turned));flipper.setAttribute('aria-label',turned?'Answer revealed. Press to return to the quotation.':'Quotation shown. Press to reveal the answer.');flipper.querySelector('.flash-front')?.setAttribute('aria-hidden',String(turned));flipper.querySelector('.flash-back')?.setAttribute('aria-hidden',String(!turned))};
-  flipper.addEventListener('click',flip);
-  flipper.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}});
-  $('revPrev').onclick=()=>{index=(index-1+d.length)%d.length;flash(-1)};
-  $('revNext').onclick=()=>{index=(index+1)%d.length;flash(1)};
-  $('revShuffle').onclick=()=>{const current=c;d.sort(()=>Math.random()-.5);index=Math.max(0,d.findIndex(x=>x.poem===current.poem&&x.quote===current.quote));flash(1)};
-  function mark(ok){const w=weak(),k=c.poem+'|'+c.quote;w[k]=ok?Math.max(0,(w[k]||0)-1):(w[k]||0)+1;if(!w[k])delete w[k];save(w);index=(index+1)%d.length;flash(1)}
-  $('revMiss').onclick=()=>mark(false);$('revKnown').onclick=()=>mark(true);
+
+function practiceDeckData(){
+ return poems.flatMap(p=>(p[3]||[]).map((x,i)=>{
+  const note=(exactNotes[p[0]]||[]).find(n=>n[0]===x[0]);
+  const analysis=Array.isArray(note?.[2])?note[2].join(' '):(note?.[2]||x[2]||'');
+  return {id:p[0]+'-'+i,poem:p[0],author:p[1]||'',theme:p[2]||'',quote:x[0]||'',method:note?.[1]||x[1]||'',analysis,context:x[3]||''};
+ })).filter(x=>x.quote);
+}
+function practiceSafe(v){return escape(String(v??''))}
+function practiceShuffle(list){const a=[...list];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function practiceReadStore(key){try{return JSON.parse(localStorage.getItem(key)||'{}')}catch{return {}}}
+function practiceWriteStore(key,value){try{localStorage.setItem(key,JSON.stringify(value))}catch(e){console.warn('Practice progress could not be stored locally:',e)}}
+function practiceHeader(title,desc){return '<div class="activity-top"><div class="activity-heading"><span class="activity-brand">REVISION CLUB · PRACTICE</span><h1>'+practiceSafe(title)+'</h1><p>'+practiceSafe(desc)+'</p></div><button id="activityExit" class="activity-exit">Exit session</button></div>'}
+function practiceProgressBar(n,total){return '<div class="practice-session-progress"><span style="width:'+Math.max(0,Math.min(100,Math.round((n/Math.max(1,total))*100)))+'%"></span></div>'}
+function practiceStopTimer(){if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}}
+function practiceMount(html){
+ const area=$('reviseArea');if(!area)throw new Error('Practice activity container is missing.');
+ area.hidden=false;document.body.classList.add('activity-session');document.body.classList.remove('immersive','flash-wizard-active');
+ area.innerHTML=html;
+ const exit=$('activityExit');if(exit)exit.onclick=practiceExit;
+}
+function practiceExit(){practiceStopTimer();document.body.classList.remove('activity-session','immersive','flash-wizard-active');page='practice';render();window.scrollTo({top:0,behavior:'smooth'})}
+async function practiceAward(activity,score,topic,accuracy,metadata,title,summary,detailHtml,started,restart){
+ practiceStopTimer();
+ const seconds=Math.max(1,Math.round((Date.now()-started)/1000));
+ const saved=await recordPracticeSession(activity,score,seconds,topic,accuracy,metadata||{});
+ const xp=saved?Number(saved.xp_earned||0):0;
+ practiceMount(practiceHeader('Session complete',summary)+
+  '<section class="practice-award-screen"><div class="xp-celebration" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><span class="rev-kicker">YOUR SESSION RESULTS</span><h2>'+practiceSafe(title)+'</h2><div class="practice-award-number">'+(saved?'+'+xp.toLocaleString():'—')+'</div><div class="practice-award-label">'+(saved?'XP EARNED':'XP NOT SAVED')+'</div><p class="practice-award-streak">'+(saved?'Streak: '+Number(saved.streak||0)+' day(s) · Level '+Number(saved.level||1):'Your activity is shown below, but the session could not be saved.')+'</p>'+detailHtml+
+  '<div class="practice-award-actions"><button id="awardAgain">Try again</button><button id="awardProgress">View progress</button><button id="awardBack" class="primary">Back to Practice</button></div></section>');
+ $('awardBack').onclick=practiceExit;
+ $('awardProgress').onclick=()=>{practiceStopTimer();document.body.classList.remove('activity-session');page='progress';render();window.scrollTo({top:0,behavior:'smooth'})};
+ $('awardAgain').onclick=()=>{if(restart)restart();else practiceExit()};
+ return saved;
+}
+function launchPracticeExperience(kind){
+ if(kind==='flash')return practiceFlashcards();
+ if(kind==='blurt')return practiceBlurting();
+ if(kind==='mindmap')return practiceMindMaps();
+ if(kind==='quiz')return practiceQuickQuiz();
+ if(kind==='match')return practiceMatchGaps();
+ if(kind==='progression')return practiceExplainIt();
+ if(kind==='progress'){page='progress';render();return}
+ return practiceFlashcards();
+}
+function practiceFlashcards(){
+ const started=Date.now(),uid=user.id;
+ const cards=practiceShuffle(practiceDeckData());
+ const outcomes=practiceReadStore('rc-flashcards-'+uid);
+ let index=0,flipped=false;
+ const rated={};
+ function renderCard(direction){
+  const c=cards[index];flipped=false;
+  const prior=outcomes[c.id]||0;
+  practiceMount(practiceHeader('Flashcards','Flip the card, study the explanation, then rate your recall.')+
+   '<div class="flash-session-meta"><span>CARD '+(index+1)+' / '+cards.length+'</span><span>'+(prior>0?'Needs another look':'New or secure')+'</span><span>'+Object.keys(rated).length+' rated this session</span></div>'+practiceProgressBar(index+1,cards.length)+
+   '<div class="flash-card-stage"><div class="flash-stack-shadow flash-stack-back"></div><div class="flash-stack-shadow flash-stack-middle"></div><div class="flash-card-scene '+(direction<0?'flash-arrive-prev':'flash-arrive-next')+'"><div class="flash-card-inner" id="flashCardInner" role="button" tabindex="0" aria-label="Flashcard. Activate to reveal the answer." aria-pressed="false">'+
+    '<article class="flash-card-face flash-card-front"><div class="flash-card-topline"><span>RECALL</span><span>'+practiceSafe(c.poem)+'</span></div><span class="flash-card-index">QUOTE '+(index+1)+'</span><blockquote>“'+practiceSafe(c.quote)+'”</blockquote><span class="flash-card-turn">Tap to flip · Recall the method and meaning</span></article>'+
+    '<article class="flash-card-face flash-card-back" aria-hidden="true"><div class="flash-card-answer-scroll"><span class="flash-card-index">THE BREAKDOWN</span><h3>Method</h3><p>'+practiceSafe(c.method)+'</p><h3>Analysis</h3><p>'+practiceSafe(c.analysis)+'</p><h3>Context &amp; wider message</h3><p>'+practiceSafe(c.context||c.theme||'Connect the quotation to the poem’s wider message.')+'</p></div><span class="flash-card-turn">Tap to return to the quotation</span></article>'+
+   '</div></div></div>'+
+   '<div class="flash-card-controls"><button id="flashPrevious" '+(index===0?'disabled':'')+'>Previous</button><button id="flashShuffle">Shuffle remaining</button><button id="flashNext">Next without rating</button><button id="flashFinish" class="primary">Finish session</button></div>'+
+   '<div class="flash-rating hidden" id="flashRating"><span>How well did you remember it?</span><button id="flashAgain">Needs practice</button><button id="flashRemembered" class="primary">Remembered</button></div>');
+  const inner=$('flashCardInner');
+  const flip=()=>{inner.classList.toggle('is-flipped');flipped=inner.classList.contains('is-flipped');inner.setAttribute('aria-pressed',String(flipped));inner.querySelector('.flash-card-front').setAttribute('aria-hidden',String(flipped));inner.querySelector('.flash-card-back').setAttribute('aria-hidden',String(!flipped));$('flashRating').classList.toggle('hidden',!flipped)};
+  inner.onclick=flip;inner.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}};
+  $('flashPrevious').onclick=()=>{if(index>0){index--;renderCard(-1)}};
+  $('flashNext').onclick=()=>{if(index<cards.length-1){index++;renderCard(1)}else finish()};
+  $('flashShuffle').onclick=()=>{const current=c;const remaining=practiceShuffle(cards.slice(index+1));cards.splice(index+1,cards.length-index-1,...remaining);renderCard(1)};
+  $('flashAgain').onclick=()=>rate(false);
+  $('flashRemembered').onclick=()=>rate(true);
+  $('flashFinish').onclick=finish;
  }
- function blurt(){
-  const started=Date.now();
-  const allTargets=poems.flatMap(p=>(p[3]||[]).map((x,i)=>({poem:p[0],quote:x[0],method:x[1],analysis:x[2],context:x[3]||''})));
-  const targets=[...allTargets].sort(()=>Math.random()-.5).slice(0,Math.min(10,allTargets.length));
-  let activeLens='Quotes',timerEnabled=false,remaining=300,timerId=null;
-  const lensHelp={
-   'Quotes':'Recall precise evidence from across the anthology. Think about the lines that best represent each poem.',
-   'Methods':'Name the language or structural choices the poet makes, and why those choices matter.',
-   'Analysis':'Explain individual words, images and shifts. Move from what the quote says to what it suggests.',
-   'Context':'Connect the poem to its speaker, situation and relevant social or historical ideas.',
-   'Wider message':'What does the poet want the reader to question, feel or understand?'
+ function rate(remembered){
+  if(!flipped)return;
+  const c=cards[index],value=Boolean(remembered);
+  rated[c.id]=value;
+  outcomes[c.id]=value?Math.max(0,(outcomes[c.id]||0)-1):(outcomes[c.id]||0)+1;
+  if(!outcomes[c.id])delete outcomes[c.id];
+  practiceWriteStore('rc-flashcards-'+uid,outcomes);
+  if(index<cards.length-1){index++;renderCard(1)}else finish();
+ }
+ async function finish(){
+  const rows=Object.entries(rated),strong=rows.filter(x=>x[1]).map(x=>cards.find(c=>c.id===x[0])).filter(Boolean),weak=rows.filter(x=>!x[1]).map(x=>cards.find(c=>c.id===x[0])).filter(Boolean);
+  const accuracy=rows.length?Math.round(strong.length/rows.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+strong.length+'</b><span>Remembered</span></div><div><b>'+weak.length+'</b><span>Needs practice</span></div><div><b>'+accuracy+'%</b><span>Recall rate</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3>'+(strong.length?strong.slice(0,6).map(c=>'<p>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</p>').join(''):'<p>No cards rated as secure yet. That gives you a clear place to start.</p>')+'</section><section><h3>Revisit these</h3>'+(weak.length?weak.slice(0,6).map(c=>'<p>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</p>').join(''):'<p>No weak cards recorded in this round.</p>')+'</section></div>';
+  await practiceAward('flashcards-session',strong.length,'Power & Conflict',accuracy,{total_questions:rows.length,correct_answers:strong.length,remembered:strong.length,needs_practice:weak.length,unrated:cards.length-rows.length},'Your flashcard review',strong.length+' remembered · '+weak.length+' to revisit',detail,started,practiceFlashcards);
+ }
+ renderCard(1);
+}
+function practiceBlurting(){
+ const started=Date.now(),all=practiceShuffle(practiceDeckData()),targets=all.slice(0,Math.min(5,all.length));
+ let timerId=null,remaining=300,stage='write';
+ const lenses=['Quotes','Methods','Analysis','Context','Wider message'];
+ const lensCopy={
+  'Quotes':'Recall precise evidence. Think about the lines that best represent the poem.',
+  'Methods':'Name the language or structural choices the poet makes and why they matter.',
+  'Analysis':'Move from an individual word or image to its deeper implications.',
+  'Context':'Connect the speaker and situation to relevant social or historical ideas.',
+  'Wider message':'What does the poet want the reader to question, feel or understand?'
+ };
+ const timeText=()=>String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
+ function renderWrite(){
+  stage='write';
+  practiceMount(practiceHeader('Blurting','Free recall and guided prompts work together in one session.')+
+   '<section class="blurt-experience"><div class="blurt-session-head"><div><span class="rev-kicker">POWER &amp; CONFLICT · RECALL</span><h2>Get everything out of your head.</h2><p>Start with free writing, then use the guided prompts to check the detail.</p></div><div class="blurt-clock"><button id="blurtTimerToggle">Start optional 5-minute timer</button><strong id="blurtClock" class="hidden">05:00</strong></div></div>'+
+   '<div class="blurt-two-column"><section class="blurt-free-write"><div class="blurt-subhead"><span class="rev-kicker">01 · FREE RECALL</span><span id="blurtWordCount">0 words</span></div><textarea id="blurtFreeWrite" class="blurt-canvas" placeholder="Write anything you can remember: quotations, methods, analysis, context, themes and the poet’s message…"></textarea><p class="blurt-note">No notes. No model answers. Get your knowledge onto the page.</p></section>'+
+   '<section class="blurt-guided"><div class="blurt-subhead"><span class="rev-kicker">02 · GUIDED RECALL</span><span>Interactive prompts</span></div><p class="blurt-guided-intro">For each quotation, recall the method and explain its effect in your own words.</p>'+
+   targets.map((c,i)=>'<details class="blurt-prompt" '+(i===0?'open':'')+'><summary><span>0'+(i+1)+'</span><b>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</b></summary><label>Method<input class="field" data-guided-method="'+i+'" placeholder="Name the method…"></label><label>Effect and meaning<textarea class="field" rows="2" data-guided-effect="'+i+'" placeholder="What does it suggest?"></textarea></label><label>Wider message<input class="field" data-guided-message="'+i+'" placeholder="What bigger idea does it convey?"></label></details>').join('')+
+   '</section></div><div class="blurt-write-footer"><span>Free writing and guided answers are both included in your review.</span><button id="blurtCheck" class="primary">Check my recall →</button></div></section>');
+  const input=$('blurtFreeWrite');input.oninput=()=>{$('blurtWordCount').textContent=(input.value.trim().match(/\S+/g)||[]).length+' words'};
+  $('blurtTimerToggle').onclick=()=>{
+   if(timerId){clearInterval(timerId);timerId=null;window.rcPracticeTimer=null;$('blurtTimerToggle').textContent='Start optional 5-minute timer';$('blurtClock').classList.add('hidden');remaining=300;return}
+   $('blurtClock').classList.remove('hidden');$('blurtClock').textContent=timeText();$('blurtTimerToggle').textContent='Timer running';
+   timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);if($('blurtClock'))$('blurtClock').textContent=timeText();if(remaining===0){clearInterval(timerId);timerId=null;window.rcPracticeTimer=null;if($('blurtTimerToggle'))$('blurtTimerToggle').textContent='Time is up'}},1000);window.rcPracticeTimer=timerId;
   };
-  const stopTimer=()=>{if(timerId){clearInterval(timerId);timerId=null}window.rcBlurtTimerId=null};
-  const timerText=()=>String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
-  function renderWriting(){
-   mount(header('Blurting','A full-screen recall session. Work from memory, then check what you covered.')+
-    '<section class="blurt-experience">'+
-     '<div class="blurt-session-bar"><div><span class="rev-kicker">POWER &amp; CONFLICT · RANDOM RECALL SET</span><h2>Empty page. Full recall.</h2><p>Get your ideas down before you look at any model answers.</p></div><div class="blurt-timer-tools"><button id="revTimerToggle">Start 5-minute timer</button><strong id="revTimer" class="hidden">05:00</strong></div></div>'+
-     '<div class="blurt-workspace">'+
-      '<section class="blurt-writing-area"><div class="blurt-writing-heading"><span class="rev-kicker">YOUR RECALL</span><span id="blurtWordCount">0 words</span></div><textarea id="revBlurtText" class="blurt-canvas" placeholder="Start with anything you remember: quotations, methods, analysis, context or the poet’s message…"></textarea><div class="blurt-writing-foot"><span>Write freely. Spelling and order do not matter yet.</span><button class="primary" id="revCheck">Check my recall <span aria-hidden="true">→</span></button></div></section>'+
-      '<aside class="blurt-guidance"><span class="rev-kicker">RECALL LENSES</span><h3>Give your memory a nudge</h3><p>Choose a lens to focus your thinking. You can move between them at any time.</p><div class="blurt-lens-list">'+Object.keys(lensHelp).map((x,i)=>'<button class="blurt-lens '+(x===activeLens?'active':'')+'" data-blurt-lens="'+safe(x)+'"><span>0'+(i+1)+'</span><b>'+safe(x)+'</b><span class="blurt-lens-mark">'+(x===activeLens?'•':'')+'</span></button>').join('')+'</div><div class="blurt-lens-hint" id="blurtLensHint">'+safe(lensHelp[activeLens])+'</div><div class="blurt-guidance-note">No model answers are shown until you finish your first recall round.</div></aside>'+
-     '</div>'+
-    '</section>');
-   const input=$('revBlurtText');
-   input.addEventListener('input',()=>{$('blurtWordCount').textContent=(input.value.trim().match(/\S+/g)||[]).length+' words'});
-   area.querySelectorAll('[data-blurt-lens]').forEach(btn=>btn.onclick=()=>{activeLens=btn.dataset.blurtLens;area.querySelectorAll('[data-blurt-lens]').forEach(x=>{x.classList.toggle('active',x===btn);x.querySelector('.blurt-lens-mark').textContent=x===btn?'•':''});$('blurtLensHint').textContent=lensHelp[activeLens]});
-   $('revTimerToggle').onclick=()=>{
-    if(timerEnabled){timerEnabled=false;stopTimer();$('revTimerToggle').textContent='Start 5-minute timer';$('revTimer').classList.add('hidden');remaining=300;return}
-    timerEnabled=true;remaining=300;$('revTimer').classList.remove('hidden');$('revTimer').textContent=timerText();$('revTimerToggle').textContent='Timer running';
-    timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);const el=$('revTimer');if(el)el.textContent=timerText();if(remaining===0){stopTimer();$('revTimerToggle').textContent='Time is up';$('revTimerToggle').disabled=true}},1000);window.rcBlurtTimerId=timerId;
-   };
-   $('revCheck').onclick=()=>{const draft=input.value.trim();if(!draft){input.focus();input.setCustomValidity('Write a few ideas before checking your recall.');input.reportValidity();input.setCustomValidity('');return}showReview(draft)};
-  }
-  function showReview(draft){
-   stopTimer();
-   mount(header('Check your recall','Compare your first round with the knowledge points below. Mark only what you genuinely remembered.')+
-    '<section class="blurt-review-screen"><div class="blurt-review-intro"><span class="rev-kicker">ROUND 02 · SELF-ASSESSMENT</span><h2>What made it onto the page?</h2><p>Your writing is kept below so you can compare it with each point.</p><details class="blurt-draft"><summary>Review my first-round notes</summary><p>'+safe(draft).replace(/\n/g,'<br>')+'</p></details></div>'+
-    '<div class="blurt-review-list">'+targets.map((x,i)=>'<article class="blurt-review-item"><label><input type="checkbox" data-blurt-target="'+i+'"><span><b>'+safe(x.poem)+' · “'+safe(x.quote)+'”</b><small>Tick if you recalled this quotation or its key idea.</small></span></label><button class="blurt-model-toggle" data-blurt-model="'+i+'" aria-expanded="false">Reveal model</button><div class="blurt-model hidden" id="blurtModel'+i+'"><h4>Method</h4><p>'+safe(x.method)+'</p><h4>Analysis</h4><p>'+safe(x.analysis)+'</p><h4>Context &amp; wider message</h4><p>'+safe(x.context||'Connect the quotation to the poem’s wider ideas.')+'</p></div></article>').join('')+'</div>'+
-    '<div class="blurt-review-actions"><button id="revMissed">Build a second round from missed points</button><button id="revSave" class="primary">Finish session</button></div><p id="revBlurtMsg" aria-live="polite"></p></section>');
-   area.querySelectorAll('[data-blurt-model]').forEach(btn=>btn.onclick=()=>{const el=$('blurtModel'+btn.dataset.blurtModel);const open=el.classList.toggle('hidden')===false;btn.textContent=open?'Hide model':'Reveal model';btn.setAttribute('aria-expanded',String(open))});
-   $('revMissed').onclick=()=>{const missed=targets.filter((x,i)=>!area.querySelector('[data-blurt-target="'+i+'"]').checked);secondRound(missed,draft)};
-   $('revSave').onclick=()=>saveResult(targets,draft);
-  }
-  function secondRound(missed,draft){
-   const work=missed.length?missed:targets;
-   mount(header('Second round','Rebuild the points you missed, without copying the model.')+
-    '<section class="blurt-second-screen"><div><span class="rev-kicker">ROUND 03 · TARGETED RECALL</span><h2>'+(missed.length?'Turn missed points into strengths.':'You marked every point. Strengthen the explanations.')+'</h2><p>'+(missed.length?missed.length+' knowledge point(s) to revisit.':'Try writing the key explanations again in your own words.')+'</p></div><div class="blurt-second-prompts">'+work.map((x,i)=>'<div><b>'+safe(x.poem)+' · '+safe(x.quote)+'</b><small>Recall the method, effect and wider message.</small></div>').join('')+'</div><textarea id="blurtSecondDraft" class="blurt-canvas" placeholder="Rebuild the missed ideas in your own words…"></textarea><div class="blurt-writing-foot"><button id="blurtBackReview">Back to checklist</button><button class="primary" id="blurtFinishSecond">Finish and earn XP →</button></div></section>');
-   $('blurtBackReview').onclick=()=>showReview(draft);
-   $('blurtFinishSecond').onclick=()=>saveResult(targets,draft,missed.length,$('blurtSecondDraft').value.trim());
-  }
-  async function saveResult(items,draft,missedCount=null,secondDraft=''){
-   const checks=area.querySelectorAll('[data-blurt-target]:checked').length;
-   const accuracy=items.length?Math.round((missedCount===null?checks:items.length-missedCount)/items.length*100):0;
-   const elapsed=Math.max(1,Math.round((Date.now()-started)/1000));
-   const r=await recordPracticeSession('blurting',1500,elapsed,'Power & Conflict',accuracy,{total_questions:items.length,correct_answers:items.length-(missedCount??(items.length-checks)),first_round_words:(draft.match(/\S+/g)||[]).length,second_round_words:(secondDraft.match(/\S+/g)||[]).length,second_round:missedCount!==null});
-   mount(header('Session complete','Your recall has been recorded.')+'<section class="blurt-results-screen"><span class="rev-kicker">SESSION RESULTS</span><div class="blurt-result-score">'+accuracy+'%</div><h2>'+(accuracy>=80?'Strong recall. Keep building.':accuracy>=50?'Good foundation. Target the gaps.':'A useful first pass. Revisit the weak spots.')+'</h2><p>'+(r?'+'+Number(r.xp_earned||1500).toLocaleString()+' XP earned.':'Your session could not be saved, so XP has not been confirmed.')+'</p><div class="blurt-result-stats"><div><b>'+items.length+'</b><span>Knowledge points</span></div><div><b>'+Math.max(0,items.length-(missedCount??(items.length-checks)))+'</b><span>Recalled</span></div><div><b>'+elapsed+'s</b><span>Time spent</span></div></div><div class="row"><button id="blurtAgain">Try another round</button><button id="blurtExit" class="primary">Back to practice</button></div></section>');
-   $('blurtAgain').onclick=()=>{stopTimer();blurt()};
-   $('blurtExit').onclick=exit;
-  }
-  renderWriting();
+  $('blurtCheck').onclick=()=>{
+   const draft=input.value.trim();
+   const guided=targets.map((c,i)=>({method:$('reviseArea').querySelector('[data-guided-method="'+i+'"]')?.value||'',effect:$('reviseArea').querySelector('[data-guided-effect="'+i+'"]')?.value||'',message:$('reviseArea').querySelector('[data-guided-message="'+i+'"]')?.value||''}));
+   if(!draft&&!guided.some(x=>x.method||x.effect||x.message)){input.focus();return}
+   stopTimer();showReview(draft,guided);
+  };
  }
- function explain(){const d=deckNow();if(!d.length)return;const c=d[index%d.length],steps=[['Main idea',c.context||c.poem+' explores its central ideas'],['Method',c.method],['Quotation',c.quote],['Analysis',c.analysis]],v=steps[stage];mount(header('Explain it','Build a complete analysis in four short steps.')+bar(stage+1,4)+'<section class="rev-panel"><span class="rev-kicker">STEP '+(stage+1)+' OF 4</span><h3>Recall the '+v[0].toLowerCase()+'</h3><p>Try to explain it in your own words before revealing the model answer.</p><button class="primary" id="revReveal">Reveal model answer</button><div id="revModel" class="rev-model hidden">'+learningPoints(v[1])+'</div><div class="rev-actions"><button id="revNotYet">Need more practice</button><button id="revRemember" class="primary">I remembered it</button></div></section>');$('revReveal').onclick=()=>$('revModel').classList.remove('hidden');const move=ok=>{const w=weak(),k=c.poem+'|'+c.quote;w[k]=ok?Math.max(0,(w[k]||0)-1):(w[k]||0)+1;if(!w[k])delete w[k];save(w);if(stage===3){stage=0;index++}else stage++;explain()};$('revNotYet').onclick=()=>move(false);$('revRemember').onclick=()=>move(true)}
- function startQuiz(){const d=deckNow();if(!d.length)return;const items=[...d].sort(()=>Math.random()-.5).slice(0,Math.min(quizAmount,d.length));quiz={i:0,score:0,start:Date.now(),items};ask()}
- function ask(){const c=quiz.items[quiz.i],opts=[c.poem,...poems.filter(p=>p[0]!==c.poem).sort(()=>Math.random()-.5).slice(0,3).map(p=>p[0])].sort(()=>Math.random()-.5);mount(header('Quick quiz','Choose the poem that matches the quotation.')+bar(quiz.i+1,quiz.items.length)+'<section class="rev-panel"><span class="rev-kicker">QUESTION '+(quiz.i+1)+' OF '+quiz.items.length+'</span><h3>Which poem does this quotation come from?</h3><blockquote class="rev-quiz-quote">“'+safe(c.quote)+'”</blockquote><div class="rev-options">'+opts.map((x,i)=>'<button data-rev-option="'+i+'">'+safe(x)+'</button>').join('')+'</div><div id="revFeedback"></div></section>');let done=false;area.querySelectorAll('[data-rev-option]').forEach((b,i)=>b.onclick=()=>{if(done)return;done=true;const ok=opts[i]===c.poem;if(ok)quiz.score++;area.querySelectorAll('[data-rev-option]').forEach(x=>{x.disabled=true;if(x.textContent===c.poem)x.classList.add('correct')});$('revFeedback').innerHTML='<p class="'+(ok?'rev-good':'rev-wrong')+'">'+(ok?'Correct.':'The answer is '+safe(c.poem)+'.')+'</p><p><b>Method:</b> '+safe(c.method)+'</p><p><b>Analysis:</b> '+safe(c.analysis)+'</p><button class="primary" id="revQNext">'+(quiz.i+1===quiz.items.length?'See results':'Next question')+'</button>';$('revQNext').onclick=()=>{quiz.i++;if(quiz.i<quiz.items.length)ask();else finishQuiz()}})}
- async function finishQuiz(){const acc=Math.round(quiz.score/quiz.items.length*100),r=await recordPracticeSession('quick-quiz',1200,Math.round((Date.now()-quiz.start)/1000),'Power & Conflict',acc,{total_questions:quiz.items.length,correct_answers:quiz.score});mount(header('Session complete','Your results have been saved.')+'<section class="rev-panel rev-results"><span class="rev-kicker">QUIZ RESULTS</span><div class="rev-score">'+quiz.score+' / '+quiz.items.length+'</div><h3>'+acc+'% accuracy</h3><p>'+(r?'+'+Number(r.xp_earned||1200).toLocaleString()+' XP earned':'Your result could not be saved.')+'</p>'+bar(quiz.score,quiz.items.length)+'<div class="rev-actions"><button id="revRetry">Try again</button><button id="revDone" class="primary">Back to practice</button></div></section>');$('revRetry').onclick=startQuiz;$('revDone').onclick=exit}
- draw();
+ function showReview(draft,guided){
+  stage='review';
+  practiceMount(practiceHeader('Review your recall','Compare your writing and guided answers with the model. Mark only what you genuinely remembered.')+
+   '<section class="blurt-review-screen"><div class="blurt-review-heading"><span class="rev-kicker">ROUND 02 · SELF-ASSESSMENT</span><h2>What did you get right?</h2><p>Your first-round writing and guided answers are kept here for comparison.</p><details class="blurt-draft"><summary>Open my first-round writing</summary><p>'+practiceSafe(draft||'No free-writing notes entered. Your guided answers are still shown below.')+'</p></details></div>'+
+   '<div class="blurt-review-grid">'+targets.map((c,i)=>'<article class="blurt-review-item"><label class="blurt-check-line"><input type="checkbox" data-blurt-check="'+i+'"><span><b>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</b><small>Tick if you recalled the quote and its key explanation.</small></span></label><div class="blurt-guided-review"><span><b>Your method:</b> '+practiceSafe(guided[i].method||'Not entered')+'</span><span><b>Your effect:</b> '+practiceSafe(guided[i].effect||'Not entered')+'</span><span><b>Your wider message:</b> '+practiceSafe(guided[i].message||'Not entered')+'</span></div><button data-blurt-reveal="'+i+'" aria-expanded="false">Reveal model answer</button><div class="blurt-model hidden" id="blurtModel'+i+'"><h4>Method</h4><p>'+practiceSafe(c.method)+'</p><h4>Analysis</h4><p>'+practiceSafe(c.analysis)+'</p><h4>Context &amp; wider message</h4><p>'+practiceSafe(c.context||c.theme)+'</p></div></article>').join('')+'</div>'+
+   '<div class="blurt-review-actions"><button id="blurtSecond">Second round: focus on missed points</button><button id="blurtFinish" class="primary">Finish session</button></div></section>');
+  areaBlurtBind(draft,guided);
+ }
+ function areaBlurtBind(draft,guided){
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-blurt-reveal]').forEach(b=>b.onclick=()=>{const box=$('blurtModel'+b.dataset.blurtReveal),open=box.classList.toggle('hidden')===false;b.textContent=open?'Hide model answer':'Reveal model answer';b.setAttribute('aria-expanded',String(open))});
+  $('blurtSecond').onclick=()=>{const missed=targets.filter((x,i)=>!area.querySelector('[data-blurt-check="'+i+'"]').checked);renderSecond(missed.length?missed:targets,draft,guided,missed.length===0)};
+  $('blurtFinish').onclick=()=>saveBlurting(draft,guided,null,'');
+ }
+ function renderSecond(missed,draft,guided,allRemembered){
+  stage='second';
+  practiceMount(practiceHeader('Second round','Rebuild the knowledge points you missed without copying the model.')+
+   '<section class="blurt-second-screen"><span class="rev-kicker">ROUND 03 · TARGETED RECALL</span><h2>'+(allRemembered?'Strengthen your explanations.':'Turn weak spots into strengths.')+'</h2><p>'+missed.length+' point(s) in this focused round. Write from memory first, then self-check.</p>'+
+   missed.map((c,i)=>'<article class="blurt-second-prompt"><b>'+practiceSafe(c.poem)+' · “'+practiceSafe(c.quote)+'”</b><textarea class="field" rows="3" data-second-draft="'+i+'" placeholder="Recall the method, effect and wider message…"></textarea><label><input type="checkbox" data-second-check="'+i+'"> I rebuilt this point accurately</label></article>').join('')+
+   '<div class="blurt-review-actions"><button id="blurtBackReview">Back to review</button><button id="blurtFinishSecond" class="primary">Finish second round →</button></div></section>');
+  $('blurtBackReview').onclick=()=>showReview(draft,guided);
+  $('blurtFinishSecond').onclick=()=>saveBlurting(draft,guided,missed,[...area.querySelectorAll('[data-second-draft]')].map(x=>x.value).join('\n'));
+ }
+ async function saveBlurting(draft,guided,secondItems,secondDraft){
+  const checks=[...$('reviseArea').querySelectorAll('[data-blurt-check]:checked')].length;
+  const secondChecks=[...$('reviseArea').querySelectorAll('[data-second-check]:checked')].length;
+  const firstScore=checks,finalScore=secondItems?Math.min(targets.length,checks+secondChecks):checks;
+  const accuracy=targets.length?Math.round(finalScore/targets.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+finalScore+'</b><span>Recalled</span></div><div><b>'+Math.max(0,targets.length-finalScore)+'</b><span>Still to revisit</span></div><div><b>'+accuracy+'%</b><span>Recall score</span></div></div><div class="practice-result-columns"><section><h3>Free writing</h3><p>'+(draft?(draft.match(/\S+/g)||[]).length+' words written':'No free-writing notes entered')+'</p></section><section><h3>Guided prompts</h3><p>'+guided.filter(x=>x.method||x.effect||x.message).length+' of '+guided.length+' completed</p></section></div><p>'+(secondItems?'Second-round rebuild: '+secondChecks+' point(s) self-checked as secure.':'You can use the missed-point second round next time to strengthen recall.')+'</p>';
+  await practiceAward('blurting',finalScore,'Power & Conflict',accuracy,{total_questions:targets.length,correct_answers:finalScore,first_round_words:(draft.match(/\S+/g)||[]).length,guided_completed:guided.filter(x=>x.method||x.effect||x.message).length,second_round:!!secondItems,second_round_words:(secondDraft.match(/\S+/g)||[]).length},'Your recall results',finalScore+' of '+targets.length+' knowledge points recalled',detail,started,practiceBlurting);
+ }
+ renderWrite();
 }
 async function setupFriends(){$('findfriend').onclick=async()=>{let name=$('friendname').value.trim().toLowerCase();if(!name)return;let r=await supabase.from('profiles').select('id,username').eq('username',name).maybeSingle();if(r.error||!r.data)return say('friendmsg','No matching username found.');if(r.data.id===user.id)return say('friendmsg','That is your own account.');let prior=await supabase.from('friend_requests').select('id,status').eq('sender_id',user.id).eq('receiver_id',r.data.id).maybeSingle();if(prior.data)return say('friendmsg',prior.data.status==='accepted'?'You are already friends.':'A request has already been sent to this user.');let ins=await supabase.from('friend_requests').insert({sender_id:user.id,receiver_id:r.data.id});say('friendmsg',ins.error?(ins.error.code==='23505'?'A request already exists between these accounts.':ins.error.message):'Friend request sent to '+r.data.username+'.')};let r=await supabase.from('friend_requests').select('id,sender_id,status').eq('receiver_id',user.id).eq('status','pending');const ids=(r.data||[]).map(x=>x.sender_id);let profileRows=[];if(ids.length){const pr=await supabase.from('profiles').select('id,username').in('id',ids);profileRows=pr.data||[]}const names=Object.fromEntries(profileRows.map(x=>[x.id,x.username]));$('requests').innerHTML=(r.data||[]).map(x=>'<div class="row"><b>'+escape(names[x.sender_id]||'Student')+'</b><button data-accept="'+x.id+'">Accept</button><button data-decline="'+x.id+'">Decline</button></div>').join('')||'No pending requests.';$('requests').onclick=async e=>{let id=e.target.dataset.accept||e.target.dataset.decline;if(!id)return;await supabase.from('friend_requests').update({status:e.target.dataset.accept?'accepted':'declined'}).eq('id',id);setupFriends()};$('newchallenge').onclick=async()=>{let r=await supabase.from('challenges').insert({creator_id:user.id,title:'Power & Conflict duel',subject_id:'english-lit',mode:'quote-race'}).select().single();if(r.error){say('challengemsg',r.error.message);return}const join=await supabase.from('challenge_players').insert({challenge_id:r.data.id,user_id:user.id});say('challengemsg',join.error?'Duel created, but joining failed: '+join.error.message:'Duel created. Share its ID with a friend: '+r.data.id);loadChallenges()};loadChallenges()}
 async function loadChallenges(){const el=$('challengeList');if(!el)return;const [cr,pr]=await Promise.all([supabase.from('challenges').select('id,title,creator_id,status,created_at').in('status',['open','active']).order('created_at',{ascending:false}).limit(30),supabase.from('challenge_players').select('challenge_id,user_id,score')]);if(cr.error){el.textContent=cr.error.message;return}const players=pr.data||[];el.innerHTML=(cr.data||[]).map(c=>{const joined=players.some(x=>x.challenge_id===c.id&&x.user_id===user.id),count=players.filter(x=>x.challenge_id===c.id).length;return '<article class="feedback"><div class="row" style="justify-content:space-between"><b>'+escape(c.title)+'</b><span class="pill">'+escape(c.status)+'</span></div><p>'+count+' player(s) · '+(c.creator_id===user.id?'Created by you':'Community duel')+'</p>'+(joined?'<span class="pill">You joined</span>':'<button data-join-challenge="'+c.id+'">Join duel →</button>')+' <small>Code: '+escape(c.id.slice(0,8))+'</small></article>'}).join('')||'<p>No open duels yet. Create one to get started.</p>';el.onclick=async e=>{const id=e.target.dataset.joinChallenge;if(!id)return;e.target.disabled=true;const ins=await supabase.from('challenge_players').insert({challenge_id:id,user_id:user.id});say('challengemsg',ins.error?(ins.error.code==='23505'?'You have already joined this duel.':ins.error.message):'You joined the duel.');loadChallenges()}}
