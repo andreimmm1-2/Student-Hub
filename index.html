@@ -208,6 +208,45 @@ body{min-height:100%;overflow-x:hidden}
 
 /* Big, memorable revision points: turn dense explanations into clear visual chunks. */
 .learning-points{list-style:none!important;padding:0!important;margin:12px 0 18px;display:grid;gap:10px}.learning-points li{position:relative;padding:15px 16px 15px 52px!important;margin:0;border:1px solid var(--line);border-radius:15px;background:var(--soft);font-size:clamp(16px,2vw,20px);font-weight:650;line-height:1.5;color:var(--ink)}.learning-points li:before{content:'✦';position:absolute;left:17px;top:14px;color:#b9a8d0;font-size:21px}.learning-points.compact li{font-size:16px;padding:12px 14px 12px 44px!important}.learning-summary{padding:18px;border:1px solid rgba(169,151,193,.5);border-radius:17px;background:rgba(130,112,157,.10);margin:12px 0}.learning-summary h3{margin:0 0 8px;font-size:20px}.learning-summary .learning-points li{background:var(--card)}.flash-back .learning-points li{font-size:clamp(15px,1.7vw,18px)}
+
+/* Editorial, unboxed content: let the notes breathe instead of putting every idea in a card. */
+.card,
+.feedback,
+.poem.card,
+.poem-library-grid .poem,
+.learning-summary,
+.note-card,
+.analysis-card,
+.flash-ready-card,
+.flash-wizard-panel,
+.practice-start,
+.progress-stats .card,
+.announcement-feed .card {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.card, .feedback, .poem.card, .learning-summary { padding-left: 0; padding-right: 0; }
+.learning-summary { margin: 18px 0 24px !important; padding-top: 12px !important; border-top: 1px solid var(--line) !important; }
+.learning-summary h3 { color: var(--ink) !important; font-size: 21px !important; margin: 0 0 10px !important; }
+.learning-points { margin: 8px 0 0 !important; padding-left: 28px !important; color: #fff !important; font-size: clamp(17px, 2vw, 20px) !important; line-height: 1.75 !important; }
+.learning-points li { padding: 3px 0 7px !important; color: #fff !important; }
+body:not(.dark) .learning-points, body:not(.dark) .learning-points li { color: #202326 !important; }
+.poem p, .poem-library-grid .poem p, .feedback p { font-size: 17px; }
+.poem-library-grid .poem { min-height: 0; padding: 16px 0 !important; border-top: 1px solid var(--line) !important; }
+.poem-library-grid .poem button { margin-top: 8px; }
+.flash-ready-card { padding: 14px 0 !important; border-top: 1px solid var(--line) !important; }
+.flash-ready-card h3 { font-size: 21px; }
+.flash-ready-card p { font-size: 17px; }
+.feedback { border-bottom: 1px solid var(--line) !important; padding-top: 14px !important; padding-bottom: 14px !important; }
+body.activity-session #reviseArea .flash-back { background: var(--bg) !important; }
+body.activity-session #reviseArea .flash-face { box-shadow: none !important; }
+@media(max-width:650px) {
+  .learning-points { font-size: 17px !important; }
+  .learning-summary { margin: 14px 0 20px !important; }
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav"><button data-page="home" class="active">Home</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
