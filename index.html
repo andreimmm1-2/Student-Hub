@@ -590,6 +590,32 @@ body.activity-session #reviseArea .activity-top+ .card{width:min(100%,900px);pad
  body.activity-session #reviseArea .rating-controls button{min-width:0;padding:11px 8px;font-size:13px}
 }
 
+
+/* A setup wizard replaces the practice chooser; never show both screens together. */
+body.flash-wizard-active #page > .practice-intro,
+body.flash-wizard-active #page > .practice-heading,
+body.flash-wizard-active #page > .practice-page > .practice-activity-grid {
+  display:none!important;
+}
+body.flash-wizard-active #page > .practice-page {
+  display:block;
+  margin:0;
+  padding:0;
+  width:100%;
+  max-width:none;
+}
+body.flash-wizard-active #reviseArea {
+  display:block;
+  width:100%;
+  margin:0;
+  padding:0;
+}
+body.flash-wizard-active #reviseArea .flash-wizard {
+  margin:0 auto;
+  width:100%;
+  max-width:1050px;
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav" aria-label="Main navigation"><button data-page="home">Home</button><button data-page="learn">Learn</button><button data-page="practice">Practice</button><button data-page="community">Community</button><button data-page="progress">Progress</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
@@ -660,7 +686,7 @@ function setupRevise(){let mode='flash',scope='all',kind='quotes',wizardStep=0,c
  }
  area.innerHTML='<div class="flash-wizard"><div class="flash-wizard-top"><div><span class="flash-brand">REVISION CLUB</span><h1>Flashcards setup</h1></div><button id="exitWizard">✕ Exit</button></div><div class="flash-stepper">'+progress+'</div><section class="flash-wizard-panel">'+body+'</section><div class="flash-wizard-nav">'+(wizardStep>0?'<button id="wizardBack">← Back</button>':'<span></span>')+(wizardStep<3?'<button id="wizardNext" class="primary" '+(wizardStep===1&&!names.length?'disabled':'')+'>Continue →</button>':'<button id="startActivity" class="primary">START FLASHCARDS →</button>')+'</div></div>';
  area.querySelectorAll('[data-activity-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.activityMode;wizardStep=0;index=0;revealed=false;stage=0;quiz=null;setup()});
- $('exitWizard').onclick=()=>{document.body.classList.remove('activity-session','flash-wizard-active');page='home';render()};
+ $('exitWizard').onclick=()=>{document.body.classList.remove('activity-session','flash-wizard-active');page='practice';render()};
  $('wizardBack')?.addEventListener('click',()=>{wizardStep--;renderWizard()});
  $('wizardNext')?.addEventListener('click',()=>{if(wizardStep===1&&!names.length)return;wizardStep++;renderWizard()});
  $('startActivity')?.addEventListener('click',()=>{index=0;revealed=false;draw()});
