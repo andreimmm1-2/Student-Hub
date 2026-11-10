@@ -247,6 +247,54 @@ body.activity-session #reviseArea .flash-face { box-shadow: none !important; }
   .learning-summary { margin: 14px 0 20px !important; }
 }
 
+
+/* Minimal free-flowing layout: no cards, bubbles, tiles or decorative image-like panels. */
+.card, .feedback, .poem.card, .poem-library-grid .poem,
+.subject-course, .subject-card, .hub-tile, .page-heading,
+.subject-hero, .duel-panel, .practice-tabs, .learn-tabs,
+.subject-tabs, .flash-wizard-panel, .flash-ready-card,
+.learning-summary, .flash-face, .flash-stage,
+.announcement-feed .card, .progress-stats .card,
+.auth, .updates-intro, .admin-publish, .admin-access {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.hub-grid { display:flex !important; flex-direction:column !important; gap:0 !important; }
+.hub-tile {
+  display:flex !important; flex-direction:row !important; align-items:center !important;
+  justify-content:flex-start !important; gap:16px !important; min-height:0 !important;
+  width:100% !important; padding:18px 4px !important; color:var(--ink) !important;
+  border-bottom:1px solid var(--line) !important; text-align:left !important;
+}
+.hub-tile .tile-icon, .hub-tile .tile-arrow { display:none !important; }
+.hub-tile .tile-title { color:var(--ink) !important; font-size:22px !important; }
+.hub-tile .tile-copy { color:var(--muted) !important; font-size:15px !important; }
+.page-heading { min-height:0 !important; padding:18px 0 !important; margin:8px 0 18px !important; color:var(--ink) !important; }
+.page-heading h2, .page-heading p, .page-heading .pill { color:var(--ink) !important; }
+.page-heading-icon { display:none !important; }
+.subject-card, .subject-course { min-height:0 !important; padding:18px 0 !important; border-bottom:1px solid var(--line) !important; }
+.poem-library-grid, .subject-course-grid { display:block !important; }
+.poem-library-grid .poem { min-height:0 !important; padding:16px 0 !important; border-bottom:1px solid var(--line) !important; }
+.flash-wizard-panel { padding:12px 0 !important; }
+.flash-wizard, .flash-wizard-panel, .flash-ready-card { border:0 !important; box-shadow:none !important; }
+.practice-tabs, .learn-tabs, .subject-tabs { padding:0 !important; gap:14px !important; }
+.learning-summary { margin:20px 0 26px !important; padding:12px 0 0 !important; border-top:1px solid var(--line) !important; }
+.learning-summary h3 { font-size:21px !important; margin-bottom:10px !important; }
+.learning-points { padding-left:28px !important; font-size:clamp(17px,2vw,20px) !important; line-height:1.8 !important; }
+.learning-points li { padding:4px 0 7px !important; }
+.flash-back-scroll { background:transparent !important; }
+body.activity-session #reviseArea .flash-face { padding:clamp(22px,5vw,54px) !important; }
+body.activity-session #reviseArea .flash-stage { min-height:340px !important; }
+body.dark .flash-back { background:var(--bg) !important; }
+@media(max-width:650px) {
+  .hub-tile { padding:15px 2px !important; }
+  .hub-tile .tile-title { font-size:20px !important; }
+  .page-heading { padding:12px 0 !important; }
+}
+
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav"><button data-page="home" class="active">Home</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
