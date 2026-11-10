@@ -186,6 +186,25 @@ body.dark button.primary{background:linear-gradient(135deg,#8b7acb,#6e639f);colo
 @media(max-width:650px){.flash-wizard-panel{min-height:0;padding:17px;border-radius:17px}.flash-step{flex-direction:column;align-items:flex-start;gap:4px}.flash-step small{font-size:9px}.flash-book-stage{gap:10px;min-height:270px}.flash-book-side{width:34px;height:170px}.flash-book-cover{min-width:150px;height:235px;padding:17px 12px}.flash-book-info{max-width:125px}.flash-book-info h3{font-size:17px}.flash-book-info p{font-size:11px}.flash-poem-grid{grid-template-columns:1fr;max-height:44vh}.flash-session-choice{min-height:125px;padding:13px}.flash-content-choice{align-items:flex-start;flex-direction:column;gap:5px}.flash-content-choice .field{max-width:none}.flash-selection-foot{flex-direction:column;gap:3px}}
 
 body.flash-wizard-active{overflow:hidden}body.flash-wizard-active .wrap{max-width:none;width:100%;height:100dvh;min-height:100dvh;margin:0;padding:clamp(12px,2vw,28px)}body.flash-wizard-active header,body.flash-wizard-active .nav,body.flash-wizard-active .page-heading,body.flash-wizard-active .practice-tabs{display:none!important}body.flash-wizard-active #app,body.flash-wizard-active #page,body.flash-wizard-active .practice-page{height:100%;min-height:0;margin:0;padding:0;max-width:none}body.flash-wizard-active .flash-wizard{height:100%;display:flex;flex-direction:column;padding:0}body.flash-wizard-active .flash-wizard-panel{flex:1;min-height:0;overflow:auto}body.flash-wizard-active .flash-wizard-nav{flex-shrink:0}
+
+/* Mobile scrolling and touch fixes: keep document scrolling natural outside activities,
+   and give immersive screens a single reliable vertical scroll surface. */
+html{min-height:100%;overflow-x:hidden}
+body{min-height:100%;overflow-x:hidden}
+@media(max-width:760px){
+ body:not(.activity-session):not(.flash-wizard-active){overflow-y:auto!important;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+ body:not(.activity-session):not(.flash-wizard-active) .wrap{height:auto;min-height:100svh;padding-bottom:calc(34px + env(safe-area-inset-bottom))}
+ body.activity-session{overflow:hidden!important;height:100%;overscroll-behavior:none}
+ body.activity-session .wrap{height:100svh;height:100dvh;min-height:100svh;min-height:100dvh}
+ body.activity-session #reviseArea{position:fixed;inset:0;inset-block-start:env(safe-area-inset-top);height:auto;max-height:none;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;padding:16px 14px calc(24px + env(safe-area-inset-bottom));gap:16px}
+ body.activity-session #reviseArea .flash-study-card,body.activity-session #reviseArea .progression-session,body.activity-session #reviseArea .blurt-session,body.activity-session #reviseArea .quiz-session{flex:none;min-height: min(64svh,560px)}
+ body.flash-wizard-active{overflow-y:auto!important;overflow-x:hidden!important;height:auto;min-height:100%;overscroll-behavior-y:auto}
+ body.flash-wizard-active .wrap{height:auto;min-height:100svh;min-height:100dvh;padding:calc(12px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom));overflow:visible}
+ body.flash-wizard-active .flash-wizard{height:auto;min-height:calc(100svh - 32px);min-height:calc(100dvh - 32px);display:flex;flex-direction:column}
+ body.flash-wizard-active .flash-wizard-panel{flex:none;min-height:0;overflow:visible}
+ body.flash-wizard-active .flash-poem-grid{max-height:none;overflow:visible}
+ body.flash-wizard-active .flash-wizard-nav{position:sticky;bottom:0;z-index:5;margin:12px -12px -2px;padding:12px;background:color-mix(in srgb,var(--bg) 94%,transparent);backdrop-filter:blur(12px);padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+}
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row"><span id="who" class="pill">Not signed in</span><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><nav class="nav" id="nav"><button data-page="home" class="active">Home</button><button data-page="announcements">Updates</button><button data-page="admin" id="navAdmin" class="hidden">Admin</button></nav><main id="page"></main></div></div>
