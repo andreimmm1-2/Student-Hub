@@ -1948,12 +1948,12 @@ function scienceMatchGaps(){
   };
   return data.topics.flatMap(t=>t.notes.map((note,i)=>{const word=(gaps[t.id]||[])[i]||'',at=word?note.toLowerCase().indexOf(word.toLowerCase()):-1;return at<0?null:{...data.cards.find(c=>c.topicId===t.id&&c.kind==='knowledge'&&c.back===note),missing:word,masked:note.slice(0,at)+'□□□□'+note.slice(at+word.length)}}).filter(Boolean));
  }
- function startGaps(){items=practiceShuffle(makeGapItems()).slice(0,Math.min(rapid?20:6,makeGapItems().length));questionIndex=0;score=0;attempts=[];drawGap()}
+ function startGaps(){const available=makeGapItems();items=practiceShuffle(available).slice(0,Math.min(rapid?20:6,available.length));questionIndex=0;score=0;attempts=[];drawGap()}
  function drawGap(){
   const c=items[questionIndex];if(!c){finishGaps(false);return}
   let ui;
   if(gapFormat==='choice'){
-   const distractors=practiceShuffle(data.cards.flatMap(x=>[...x.back.matchAll(/\b[A-Za-z]{4,}\b/g)].map(m=>m[0])).filter(w=>w.toLowerCase()!==c.missing.toLowerCase())).slice(0,3);
+   const distractors=practiceShuffle([...new Set(data.cards.flatMap(x=>[...x.back.matchAll(/\b[A-Za-z]{4,}\b/g)].map(m=>m[0])).filter(w=>w.toLowerCase()!==c.missing.toLowerCase()))]).slice(0,3);
    ui='<div class="gap-choice-grid">'+practiceShuffle([c.missing,...distractors]).map(w=>'<button data-sci-gap-answer="'+practiceSafe(w)+'">'+practiceSafe(w)+'</button>').join('')+'</div>';
   }else ui='<div class="gap-typed-row"><input id="scienceGapTyped" class="field" placeholder="Type the missing word"><button id="scienceGapSubmit" class="primary">Check answer</button></div>';
   practiceMount(practiceHeader('Fill the Gaps',rapid?'Rapid-fire · complete as many Science statements as you can.':'Recall the exact scientific word missing from the statement.')+
