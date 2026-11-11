@@ -1679,7 +1679,7 @@ function practiceMount(html){
  const area=$('reviseArea');if(!area)throw new Error('Practice activity container is missing.');
  area.hidden=false;document.body.classList.add('activity-session');document.body.classList.remove('immersive','flash-wizard-active');
  area.innerHTML=html;
- const exit=$('activityExit');if(exit)exit.onclick=practiceExit;
+ const exit=$('activityExit');if(exit)exit.onclick=window.currentScienceActivity?practiceExitScience:practiceExit;
 }
 function practiceExit(){practiceStopTimer();document.body.classList.remove('activity-session','immersive','flash-wizard-active');page='practice';render();window.scrollTo({top:0,behavior:'smooth'})}
 async function practiceAward(activity,score,topic,accuracy,metadata,title,summary,detailHtml,started,restart){
