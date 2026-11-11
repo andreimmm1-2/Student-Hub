@@ -1911,7 +1911,7 @@ function scienceMatchGaps(){
  function makePairs(){
   let rows=[];
   if(matchFormat==='term-definition')rows=data.terms.map(x=>({left:x.term,right:x.definition,topic:x.topic,explanation:x.definition}));
-  if(matchFormat==='topic-term')rows=data.terms.map(x=>({left:x.topic,right:x.term,topic:x.topic,explanation:x.definition}));
+  if(matchFormat==='topic-term')rows=data.terms.map(x=>({left:x.topic+' · '+x.term,right:x.definition,topic:x.topic,explanation:x.definition}));
   if(matchFormat==='question-answer')rows=data.cards.filter(x=>x.kind==='knowledge').map(x=>({left:x.front,right:x.back,topic:x.topic,explanation:x.back}));
   if(matchFormat==='process-note')rows=data.cards.filter(x=>x.kind==='knowledge').map(x=>({left:x.topic+' · '+x.front,right:x.back,topic:x.topic,explanation:x.back}));
   return practiceShuffle(rows).slice(0,Math.min(5,rows.length)).map((x,i)=>({...x,id:'science-pair-'+i}));
@@ -1981,6 +1981,7 @@ function scienceMatchGaps(){
 }
 function scienceExplainIt(){
  const data=scienceActivityData(),started=Date.now(),uid=user?.id||'local',weakStore=practiceReadStore('rc-science-progression-weak-'+uid);
+ const topicFor=id=>data.group.topics.find(t=>t.id===id)||data.topics[0];
  let current=null,stage=0,ratings={},notes={};
  const steps=[
   {id:'knowledge',title:'Secure the knowledge',prompt:'State the relevant scientific fact or principle accurately.',model:t=>t.notes.join(' ')},
