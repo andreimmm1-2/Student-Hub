@@ -1905,14 +1905,14 @@ function practiceQuickQuiz(){
    return {type,poem:c.poem,quote:c.quote,prompt:'The quotation below comes from '+named+'.',display:'“'+c.quote+'”',correct:truth?'true':'false',explanation:'The quotation is from '+c.poem+'. '+c.analysis};
   }
   if(type==='multi'){
-   const otherAuthor=practiceShuffle(all.filter(x=>x.poem!==c.poem))[0]?.author||'';
+   const otherContext=practiceShuffle(all.filter(x=>x.poem!==c.poem&&x.context&&x.context!==c.context))[0]?.context||'';
    const statements=[
-    {value:'author',label:'The poet is '+c.author+'.',correct:true},
     {value:'theme',label:'The poem explores '+c.theme+'.',correct:true},
     {value:'method',label:'The quotation uses '+c.method+'.',correct:true},
-    {value:'other',label:'The poem is written by '+otherAuthor+'.',correct:false}
+    {value:'context',label:'Relevant context: '+c.context+'.',correct:true},
+    {value:'other',label:'Relevant context: '+otherContext+'.',correct:false}
    ];
-   return {type,poem:c.poem,quote:c.quote,prompt:'Select every accurate statement about this quotation and its poem.',display:'“'+c.quote+'”',options:practiceShuffle(statements),correct:['author','theme','method'],explanation:c.analysis+' '+c.context};
+   return {type,poem:c.poem,quote:c.quote,prompt:'Select every accurate statement about this quotation and its poem.',display:'“'+c.quote+'”',options:practiceShuffle(statements),correct:['theme','method','context'],explanation:c.analysis+' '+c.context};
   }
   const tokens=[...c.quote.matchAll(/\b[A-Za-z]{3,}\b/g)];
   const missing=tokens[Math.min(tokens.length-1,Math.floor(tokens.length/2))]?.[0]||c.quote.split(/\s+/)[0];
