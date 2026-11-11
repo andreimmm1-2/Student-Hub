@@ -1564,61 +1564,464 @@ function scienceTopicPage(subject,topic){
  return '<button data-go="scienceSubject" data-sci-subject="'+subject+'">← '+scienceStarter[subject].title+'</button><section class="subject-hero"><span class="pill">AQA GCSE SCIENCE · '+t.tag.toUpperCase()+'</span><h2>'+t.title+'</h2><p>'+t.summary+'</p></section><div class="science-lesson-grid"><section class="card"><span class="pill">KEY KNOWLEDGE</span><ul>'+t.notes.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></section><section class="card"><span class="pill">KEY TERMS</span><ul>'+t.terms.map(x=>'<li>'+escape(x)+'</li>').join('')+'</ul></section><section class="card"><span class="pill">ACTIVE RECALL</span><h3>'+escape(t.q)+'</h3><input class="field" id="scienceRecall" placeholder="Type your answer"><button class="primary" data-sci-check="recall" data-sci-subject="'+subject+'" data-sci-topic="'+topic+'">Check answer</button><p id="scienceRecallFeedback" class="muted">Try from memory before checking.</p></section><section class="card"><span class="pill">EXAM PRACTICE</span><h3>'+escape(t.exam)+'</h3><button data-sci-check="exam" data-sci-subject="'+subject+'" data-sci-topic="'+topic+'">Reveal mark points</button><div id="scienceExamMark" class="hidden"><p>'+escape(t.mark)+'</p></div></section></div>';
 }
 
+function scienceActivityData(){
+ const subject=window.currentScienceSubject||'biology',group=scienceStarter[subject]||scienceStarter.biology,all=group.topics||[];
+ const selected=all.find(t=>t.id===window.currentScienceTopic);
+ const topics=selected?[selected]:all;
+ const terms=topics.flatMap(t=>t.terms.map((raw,i)=>{const p=raw.split(' — ');return {id:t.id+'-term-'+i,term:p[0],definition:p.slice(1).join(' — ')||raw,topic:t.title,topicId:t.id}}));
+ const notePrompts={
+  'cell-biology':['Where is the DNA of an animal or plant cell enclosed?','How is bacterial DNA arranged, and what extra DNA structures may be present?','What are the roles of the nucleus, mitochondria and ribosomes?','Which structures are found in plant cells but not animal cells?'],
+  organisation:['Why must large insoluble food molecules be broken down during digestion?','What is an enzyme and how does its active site interact with a substrate?','What does a double circulatory system mean?','How do arteries, veins and capillaries differ in their roles?'],
+  'atomic-structure':['Where are protons and neutrons found in an atom?','What are the relative charges of a proton, neutron and electron?','What does the atomic number tell you?','How do isotopes of the same element differ?'],
+  bonding:['What happens to electrons during ionic bonding?','How are electrons involved in a covalent bond?','What holds a metallic structure together?','Why do simple molecular substances often have low melting points?'],
+  energy:['Name four energy stores.','What are the four main pathways by which energy is transferred?','State the principle of conservation of energy.','How is the efficiency of a device calculated?'],
+  electricity:['What does electric current measure?','What does potential difference measure?','How can resistance be calculated from voltage and current?','What stays the same in a series circuit, and what stays the same across parallel branches?']
+ };
+ const cards=topics.flatMap(t=>{
+  const fronts=notePrompts[t.id]||t.notes.map((_,i)=>'Explain key idea '+(i+1)+' from '+t.title+'.');
+  const noteCards=t.notes.map((note,i)=>({id:t.id+'-note-'+i,front:fronts[i]||'Explain this key idea from '+t.title+'.',back:note,topic:t.title,topicId:t.id,kind:'knowledge'}));
+  const termCards=t.terms.map((raw,i)=>{const p=raw.split(' — ');return {id:t.id+'-term-'+i,front:'Define: '+p[0],back:p.slice(1).join(' — ')||raw,topic:t.title,topicId:t.id,kind:'vocabulary'}});
+  return [...noteCards,...termCards];
+ });
+ return {subject,group,topics,terms,cards,selected};
+}
+function scienceActivityAward(activity,score,total,detail,started,restart){
+ practiceStopTimer();
+ const uid=user?.id||'local',pct=total?Math.round(score/total*100):0,seconds=Math.max(1,Math.round((Date.now()-started)/1000)),earned=Math.max(10,Math.round(pct/10)*10);
+ const key='rc-science-'+uid,store=practiceReadStore(key);
+ store.sessions=(store.sessions||0)+1;store.xp=(store.xp||0)+earned;
+ store.history=[{activity,score,total,pct,seconds,xp:earned,date:new Date().toISOString(),topic:(window.currentScienceSubject||'biology')+': '+(scienceStarter[window.currentScienceSubject||'biology']?.title||'Science')}].concat(store.history||[]).slice(0,30);
+ store.last=store.history[0];practiceWriteStore(key,store);
+ const subject=scienceStarter[window.currentScienceSubject||'biology']?.title||'Science';
+ practiceMount(practiceHeader('Session complete','Your Science session has been saved on this device.')+
+  '<section class="practice-award-screen"><div class="xp-celebration" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div><span class="rev-kicker">SCIENCE SESSION RESULTS</span><h2>'+practiceSafe(subject)+'</h2><div class="practice-award-number">'+pct+'%</div><div class="practice-award-label">'+score+' / '+total+' completed</div><p class="practice-award-streak">+'+earned+' local Science XP · '+seconds+' seconds</p>'+detail+'<div class="practice-award-actions"><button id="scienceActivityAgain">Try again</button><button id="scienceActivityDone" class="primary">Back to Science revision</button></div></section>');
+ $('scienceActivityAgain').onclick=()=>restart?.();
+ $('scienceActivityDone').onclick=practiceExitScience;
+ return {pct,earned};
+}
 function launchScienceActivity(kind){
  window.rcActivityContext='science';
- const subject=window.currentScienceSubject||'biology',group=scienceStarter[subject],topics=group?.topics||[];
- const chosen=topics.find(t=>t.id===window.currentScienceTopic),pool=chosen?[chosen]:topics;
- const safe=practiceSafe,started=Date.now(),uid=user?.id||'local';
- const title={flash:'Flashcards',blurt:'Blurting',mindmap:'Mind Maps',quiz:'Quick Quiz',match:'Match Up & Fill the Gaps',progression:'Explain It / Progression'}[kind]||'Science revision';
- const topicLabel=chosen?.title||group?.title||'Science';
- const allNotes=pool.flatMap(t=>t.notes.map(note=>({topic:t.title,text:note})));
- const allTerms=pool.flatMap(t=>t.terms.map(term=>({topic:t.title,text:term})));
- const storeKey='rc-science-'+uid;
- function finish(score,total,detail){
-  const pct=total?Math.round(score/total*100):0,secs=Math.max(1,Math.round((Date.now()-started)/1000));
-  const old=(()=>{try{return JSON.parse(localStorage.getItem(storeKey)||'{}')}catch{return {}}})();
-  old.sessions=(old.sessions||0)+1;old.xp=(old.xp||0)+Math.max(5,Math.round(pct/10)*5);old.last={activity:title,topic:topicLabel,score,total,pct,seconds:secs,date:new Date().toISOString()};
-  try{localStorage.setItem(storeKey,JSON.stringify(old))}catch(e){}
-  practiceMount(practiceHeader('Session complete','Your Science practice has been recorded on this device.')+'<section class="practice-award-screen"><span class="rev-kicker">SCIENCE SESSION RESULTS</span><h2>'+safe(topicLabel)+'</h2><div class="practice-award-number">'+pct+'%</div><div class="practice-award-label">'+score+' / '+total+' completed</div><p>'+safe(detail||'Keep practising to strengthen your recall.')+'</p><p><b>+'+Math.max(5,Math.round(pct/10)*5)+' local XP</b> · '+secs+' seconds</p><button class="primary" id="scienceActivityAgain">Try again</button><button id="scienceActivityDone">Back to Science revision</button></section>');
-  $('scienceActivityAgain').onclick=()=>launchScienceActivity(kind);
-  $('scienceActivityDone').onclick=()=>practiceExitScience();
- }
- function base(desc,body){practiceMount(practiceHeader(title,desc)+'<section class="card science-activity-panel">'+body+'</section>')}
- if(!pool.length){base('No topic material is available yet.','<h2>Science content is being added</h2><p>Choose another subject or return later.</p>');return}
- if(kind==='flash'){
-  let cards=practiceShuffle(pool.flatMap(t=>[...t.terms.map(x=>({front:x.split(' — ')[0],back:x.includes(' — ')?x.split(' — ').slice(1).join(' — '):x,topic:t.title})),...t.notes.map(x=>({front:'Explain: '+x,back:x,topic:t.title}))]));
-  let n=0,flipped=false,known=0;
-  function draw(){const c=cards[n];flipped=false;base('Recall first, flip to check, then rate your knowledge.','<span class="rev-kicker">CARD '+(n+1)+' / '+cards.length+' · '+safe(c.topic)+'</span><div class="science-flashcard" id="sciFlashCard" role="button" tabindex="0"><h2>'+(flipped?'Answer':'Recall')+'</h2><p>'+safe(flipped?c.back:c.front)+'</p><small>Tap card to flip</small></div><div class="row"><button id="sciPrev" '+(n===0?'disabled':'')+'>Previous</button><button id="sciFlip" class="primary">Flip card</button><button id="sciKnow">I knew it</button><button id="sciNext">Next</button><button id="sciFinish">Finish</button></div><p id="sciFlashCount">'+known+' remembered so far</p>');const flip=()=>{flipped=!flipped;drawFace()};function drawFace(){const el=$('sciFlashCard');el.innerHTML='<h2>'+(flipped?'Answer':'Recall')+'</h2><p>'+safe(flipped?c.back:c.front)+'</p><small>Tap card to flip</small>'} $('sciFlashCard').onclick=flip;$('sciFlip').onclick=flip;$('sciPrev').onclick=()=>{n=Math.max(0,n-1);draw()};$('sciKnow').onclick=()=>{known++;n++;if(n>=cards.length)finish(known,cards.length,'Cards remembered');else draw()};$('sciNext').onclick=()=>{n++;if(n>=cards.length)finish(known,cards.length,'Cards remembered');else draw()};$('sciFinish').onclick=()=>finish(known,cards.length,'Cards remembered');}
-  draw();return;
- }
- if(kind==='blurt'){
-  const t=pool[0],prompts=t.notes.map((x,i)=>'<li><label><input type="checkbox" data-blurt-point="'+i+'"> '+safe(x)+'</label></li>').join('');
-  base('Write everything you can remember before revealing the checklist.','<span class="rev-kicker">FREE RECALL · '+safe(t.title)+'</span><h2>'+safe(t.title)+': what can you remember?</h2><p>Spend five minutes writing without looking at your notes. Include definitions, processes, examples and equations where relevant.</p><textarea id="sciBlurtText" class="field" rows="10" placeholder="Start blurting everything you can remember…"></textarea><h3>Self-check checklist</h3><p>Reveal the prompts only after your first attempt.</p><button id="sciRevealBlurt">Reveal key points</button><ul id="sciBlurtPoints" class="hidden">'+prompts+'</ul><button class="primary" id="sciBlurtFinish">Finish self-check</button>');
-  $('sciRevealBlurt').onclick=()=>$('sciBlurtPoints').classList.remove('hidden');$('sciBlurtFinish').onclick=()=>{const checked=document.querySelectorAll('[data-blurt-point]:checked').length;finish(checked,t.notes.length,'You identified '+checked+' of '+t.notes.length+' key points in your self-check.')};return;
- }
- if(kind==='mindmap'){
-  const t=pool[0];let count=0;
-  base('Build a connected map of the topic using your own words.','<span class="rev-kicker">CONNECT THE IDEAS · '+safe(t.title)+'</span><h2>'+safe(t.title)+' mind map</h2><div class="science-map-centre">'+safe(t.title)+'</div><div id="sciMapBranches" class="science-map-branches">'+t.terms.map(x=>'<div class="science-map-node"><b>'+safe(x.split(' — ')[0])+'</b><p>'+safe(x.includes(' — ')?x.split(' — ').slice(1).join(' — '):'Add an explanation in your own words.')+'</p></div>').join('')+'</div><div class="science-map-add"><input id="sciMapIdea" class="field" placeholder="New branch or connection"><input id="sciMapDetail" class="field" placeholder="Explain the connection"><button id="sciMapAdd">Add branch</button></div><button class="primary" id="sciMapFinish">Finish map</button>');
-  $('sciMapAdd').onclick=()=>{const a=$('sciMapIdea').value.trim(),b=$('sciMapDetail').value.trim();if(!a||!b)return;const node=document.createElement('div');node.className='science-map-node';node.innerHTML='<b>'+safe(a)+'</b><p>'+safe(b)+'</p>';document.getElementById('sciMapBranches').append(node);$('sciMapIdea').value='';$('sciMapDetail').value='';count++};$('sciMapFinish').onclick=()=>finish(count,Math.max(3,t.terms.length),'You added '+count+' original connections. Review the branches and strengthen any missing links.');return;
- }
- if(kind==='quiz'){
-  const qs=pool.map(t=>({q:t.q,answers:t.a,topic:t.title}));let n=0,score=0;
-  function draw(){if(n>=qs.length){finish(score,qs.length,'You answered '+score+' questions correctly.');return}const q=qs[n],correct=q.answers[0]||q.answers[1]||'Review the topic notes';const distractors=practiceShuffle(allTerms.map(x=>x.text).filter(x=>x.toLowerCase()!==correct.toLowerCase())).slice(0,3);while(distractors.length<3)distractors.push('None of these statements');const opts=practiceShuffle([correct,...distractors]);base('Answer each question, then read the feedback before moving on.','<span class="rev-kicker">QUESTION '+(n+1)+' / '+qs.length+'</span><h2>'+safe(q.q)+'</h2><div class="science-quiz-options">'+opts.map((x,i)=>'<button data-sci-option="'+i+'">'+safe(x)+'</button>').join('')+'</div><p id="sciQuizFeedback" aria-live="polite"></p><button class="primary hidden" id="sciQuizNext">Next question</button>');document.querySelectorAll('[data-sci-option]').forEach((b,i)=>b.onclick=()=>{document.querySelectorAll('[data-sci-option]').forEach(x=>x.disabled=true);const ok=opts[i]===correct;if(ok)score++;$('sciQuizFeedback').textContent=ok?'Correct — '+correct:'Not quite. The accepted answer is: '+correct;$('sciQuizNext').classList.remove('hidden')});$('sciQuizNext').onclick=()=>{n++;draw()}}
-  draw();return;
- }
- if(kind==='match'){
-  const pairs=practiceShuffle(allTerms).slice(0,Math.min(8,allTerms.length)).map(x=>{const p=x.text.split(' — ');return {term:p[0],definition:p.slice(1).join(' — ')||x.text,topic:x.topic}});
-  if(!pairs.length){base('Matching practice','No key terms are available yet.');return}
-  let selected=null,matched=0;const defs=practiceShuffle(pairs);
-  function draw(){base('Select a term, then select its matching definition.','<span class="rev-kicker">MATCH THE SCIENCE</span><h2>Match each term to its meaning</h2><div class="science-match-grid"><div>'+pairs.map((p,i)=>'<button data-sci-term="'+i+'">'+safe(p.term)+'</button>').join('')+'</div><div>'+defs.map((p,i)=>'<button data-sci-def="'+i+'">'+safe(p.definition)+'</button>').join('')+'</div></div><p id="sciMatchFeedback">Matched '+matched+' / '+pairs.length+'</p>');document.querySelectorAll('[data-sci-term]').forEach(b=>b.onclick=()=>{selected=Number(b.dataset.sciTerm);document.querySelectorAll('[data-sci-term]').forEach(x=>x.classList.toggle('selected',x===b))});document.querySelectorAll('[data-sci-def]').forEach(b=>b.onclick=()=>{if(selected===null)return;const target=pairs[selected],chosen=defs[Number(b.dataset.sciDef)];if(target.term===chosen.term){matched++;document.querySelector('[data-sci-term="'+selected+'"]').disabled=true;b.disabled=true;$('sciMatchFeedback').textContent='Correct match. '+matched+' / '+pairs.length;selected=null;if(matched===pairs.length)finish(matched,pairs.length,'All scientific terms matched correctly.')}else{$('sciMatchFeedback').textContent='Not a match yet — try another definition.'}})}
-  draw();return;
- }
- if(kind==='progression'){
-  const t=pool[0];const fields=[['Knowledge','State the relevant scientific fact or principle.'],['Application','Apply it directly to the situation in the question.'],['Reasoning','Explain why it happens, linking each step.'],['Conclusion','Give a clear answer using scientific vocabulary.']];
-  base('Build a scientific explanation in four linked steps.','<span class="rev-kicker">EXPLAIN IT · '+safe(t.title)+'</span><h2>'+safe(t.exam)+'</h2>'+fields.map((f,i)=>'<label class="science-explain-step"><b>'+(i+1)+'. '+f[0]+'</b><small>'+f[1]+'</small><textarea class="field" rows="3" data-explain-step="'+i+'" placeholder="Write this part of your answer…"></textarea></label>').join('')+'<button id="sciExplainModel">Show indicative answer points</button><div id="sciExplainPoints" class="hidden"><p>'+safe(t.mark)+'</p></div><button class="primary" id="sciExplainFinish">Review my answer</button>');
-  $('sciExplainModel').onclick=()=>$('sciExplainPoints').classList.remove('hidden');$('sciExplainFinish').onclick=()=>{const filled=[...document.querySelectorAll('[data-explain-step]')].filter(x=>x.value.trim().length>=15).length;finish(filled,4,'You completed '+filled+' of the four explanation stages. Compare your response with the indicative answer points.')};return;
+ const known={flash:scienceFlashcards,blurt:scienceBlurting,mindmap:scienceMindMaps,quiz:scienceQuickQuiz,match:scienceMatchGaps,progression:scienceExplainIt};
+ const start=known[kind]||scienceFlashcards;
+ try{start()}catch(err){
+  console.error('Science activity failed:',err);
+  const area=$('reviseArea');
+  if(area){area.hidden=false;practiceMount(practiceHeader('Activity error','The Science activity could not open correctly.')+'<section class="card"><p>'+practiceSafe(err?.message||'Unknown error')+'</p><button id="scienceActivityErrorBack" class="primary">Back to Science revision</button></section>');$('scienceActivityErrorBack').onclick=practiceExitScience}
  }
 }
+function scienceFlashcards(){
+ const data=scienceActivityData(),cards=practiceShuffle(data.cards),started=Date.now(),uid=user?.id||'local',storeKey='rc-science-flashcards-'+uid;
+ const outcomes=practiceReadStore(storeKey);let index=0,flipped=false;const rated={};
+ if(!cards.length){practiceMount(practiceHeader('Flashcards','There are no Science cards for this topic yet.')+'<section class="card"><p>Choose another topic or return to Science revision.</p></section>');return}
+ function draw(direction){
+  const c=cards[index];flipped=false;
+  const prior=outcomes[c.id]||0;
+  practiceMount(practiceHeader('Flashcards','Flip the physical card, check the explanation, then rate your recall.')+
+   '<div class="flash-session-meta"><span>CARD '+(index+1)+' / '+cards.length+'</span><span>'+(prior>0?'Needs another look':'New or secure')+'</span><span>'+Object.keys(rated).length+' rated this session</span></div>'+practiceProgressBar(index+1,cards.length)+
+   '<div class="flash-card-stage"><div class="flash-stack-shadow flash-stack-back"></div><div class="flash-stack-shadow flash-stack-middle"></div><div class="flash-card-scene '+(direction<0?'flash-arrive-prev':'flash-arrive-next')+'"><div class="flash-card-inner" id="scienceFlashInner" role="button" tabindex="0" aria-label="Science flashcard. Activate to reveal the answer." aria-pressed="false">'+
+    '<article class="flash-card-face flash-card-front"><div class="flash-card-topline"><span>SCIENCE · RECALL</span><span>'+practiceSafe(c.topic)+'</span></div><span class="flash-card-index">QUESTION '+(index+1)+'</span><blockquote>'+practiceSafe(c.front)+'</blockquote><span class="flash-card-turn">Tap to flip · Say your answer before revealing</span></article>'+
+    '<article class="flash-card-face flash-card-back" aria-hidden="true"><div class="flash-card-answer-scroll"><span class="flash-card-index">THE ANSWER</span><h3>Explanation</h3><p>'+practiceSafe(c.back)+'</p><h3>Topic</h3><p>'+practiceSafe(c.topic)+'</p></div><span class="flash-card-turn">Tap to return to the question</span></article>'+
+   '</div></div></div><div class="flash-card-controls"><button id="scienceFlashPrevious" '+(index===0?'disabled':'')+'>Previous</button><button id="scienceFlashShuffle">Shuffle remaining</button><button id="scienceFlashNext">Next without rating</button><button id="scienceFlashFinish" class="primary">Finish session</button></div><div class="flash-rating hidden" id="scienceFlashRating"><span>How well did you remember it?</span><button id="scienceFlashAgain">Needs practice</button><button id="scienceFlashRemembered" class="primary">Remembered</button></div>');
+  const inner=$('scienceFlashInner');
+  const flip=()=>{inner.classList.toggle('is-flipped');flipped=inner.classList.contains('is-flipped');inner.setAttribute('aria-pressed',String(flipped));inner.querySelector('.flash-card-front').setAttribute('aria-hidden',String(flipped));inner.querySelector('.flash-card-back').setAttribute('aria-hidden',String(!flipped));$('scienceFlashRating').classList.toggle('hidden',!flipped)};
+  inner.onclick=flip;inner.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();flip()}};
+  $('scienceFlashPrevious').onclick=()=>{if(index>0){index--;draw(-1)}};
+  $('scienceFlashNext').onclick=()=>{if(index<cards.length-1){index++;draw(1)}else finish()};
+  $('scienceFlashShuffle').onclick=()=>{const remaining=practiceShuffle(cards.slice(index+1));cards.splice(index+1,cards.length-index-1,...remaining);draw(1)};
+  $('scienceFlashAgain').onclick=()=>rate(false);$('scienceFlashRemembered').onclick=()=>rate(true);$('scienceFlashFinish').onclick=finish;
+ }
+ function rate(remembered){
+  if(!flipped)return;
+  const c=cards[index],secure=Boolean(remembered);rated[c.id]=secure;
+  outcomes[c.id]=secure?Math.max(0,(outcomes[c.id]||0)-1):(outcomes[c.id]||0)+1;
+  if(!outcomes[c.id])delete outcomes[c.id];practiceWriteStore(storeKey,outcomes);
+  if(index<cards.length-1){index++;draw(1)}else finish();
+ }
+ function finish(){
+  const rows=Object.entries(rated),strong=rows.filter(x=>x[1]).map(x=>cards.find(c=>c.id===x[0])).filter(Boolean),weak=rows.filter(x=>!x[1]).map(x=>cards.find(c=>c.id===x[0])).filter(Boolean);
+  const accuracy=rows.length?Math.round(strong.length/rows.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+strong.length+'</b><span>Remembered</span></div><div><b>'+weak.length+'</b><span>Needs practice</span></div><div><b>'+accuracy+'%</b><span>Recall rate</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3>'+(strong.length?strong.slice(0,6).map(c=>'<p>'+practiceSafe(c.topic)+' · '+practiceSafe(c.front)+'</p>').join(''):'<p>No cards rated as secure yet. Keep practising.</p>')+'</section><section><h3>Revisit these</h3>'+(weak.length?weak.slice(0,6).map(c=>'<p>'+practiceSafe(c.topic)+' · '+practiceSafe(c.front)+'</p>').join(''):'<p>No weak cards recorded in this round.</p>')+'</section></div>';
+  scienceActivityAward('Flashcards',strong.length,rows.length,detail,started,scienceFlashcards);
+ }
+ draw(1);
+}
+function scienceBlurting(){
+ const data=scienceActivityData(),targets=data.cards.filter(c=>c.kind==='knowledge').slice(0,5),started=Date.now();
+ let timerId=null,remaining=300;
+ const timeText=()=>String(Math.floor(remaining/60)).padStart(2,'0')+':'+String(remaining%60).padStart(2,'0');
+ function stopTimer(){if(timerId)clearInterval(timerId);timerId=null;if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}}
+ function renderWrite(){
+  practiceMount(practiceHeader('Blurting','Free recall and guided prompts work together in one Science session.')+
+   '<section class="blurt-experience"><div class="blurt-session-head"><div><span class="rev-kicker">SCIENCE · FREE RECALL</span><h2>Get everything out of your head.</h2><p>Write what you remember first, then use the prompts to check the detail.</p></div><div class="blurt-clock"><button id="scienceBlurtTimer">Start optional 5-minute timer</button><strong id="scienceBlurtClock" class="hidden">05:00</strong></div></div>'+
+   '<div class="blurt-two-column"><section class="blurt-free-write"><div class="blurt-subhead"><span class="rev-kicker">01 · FREE RECALL</span><span id="scienceBlurtWords">0 words</span></div><textarea id="scienceBlurtDraft" class="blurt-canvas" placeholder="Write everything you can remember: definitions, structures, processes, examples, equations and key explanations…"></textarea><p class="blurt-note">No notes. No model answers. Get your scientific knowledge onto the page.</p></section>'+
+   '<section class="blurt-guided"><div class="blurt-subhead"><span class="rev-kicker">02 · GUIDED RECALL</span><span>Interactive prompts</span></div><p class="blurt-guided-intro">For each key idea, recall the scientific detail and explain why it matters.</p>'+
+   targets.map((c,i)=>'<details class="blurt-prompt" '+(i===0?'open':'')+'><summary><span>0'+(i+1)+'</span><b>'+practiceSafe(c.topic)+' · '+practiceSafe(c.front)+'</b></summary><label>Key scientific detail<textarea class="field" rows="2" data-sci-blurt-answer="'+i+'" placeholder="Explain the idea in your own words…"></textarea></label><label>Why does it matter?<input class="field" data-sci-blurt-why="'+i+'" placeholder="Describe its function or significance…"></label></details>').join('')+
+   '</section></div><div class="blurt-write-footer"><span>Your free writing and guided answers are included in your review.</span><button id="scienceBlurtCheck" class="primary">Check my recall →</button></div></section>');
+  const input=$('scienceBlurtDraft');input.oninput=()=>{$('scienceBlurtWords').textContent=(input.value.trim().match(/\S+/g)||[]).length+' words'};
+  $('scienceBlurtTimer').onclick=()=>{
+   if(timerId){stopTimer();$('scienceBlurtTimer').textContent='Start optional 5-minute timer';$('scienceBlurtClock').classList.add('hidden');remaining=300;return}
+   $('scienceBlurtClock').classList.remove('hidden');$('scienceBlurtClock').textContent=timeText();$('scienceBlurtTimer').textContent='Timer running';
+   timerId=setInterval(()=>{remaining=Math.max(0,remaining-1);if($('scienceBlurtClock'))$('scienceBlurtClock').textContent=timeText();if(remaining===0){stopTimer();if($('scienceBlurtTimer'))$('scienceBlurtTimer').textContent='Time is up'}},1000);window.rcPracticeTimer=timerId;
+  };
+  $('scienceBlurtCheck').onclick=()=>{
+   const draft=input.value.trim(),guided=targets.map((c,i)=>({answer:$('reviseArea').querySelector('[data-sci-blurt-answer="'+i+'"]')?.value||'',why:$('reviseArea').querySelector('[data-sci-blurt-why="'+i+'"]')?.value||''}));
+   if(!draft&&!guided.some(x=>x.answer||x.why)){input.focus();return}
+   stopTimer();showReview(draft,guided);
+  };
+ }
+ function showReview(draft,guided){
+  practiceMount(practiceHeader('Review your recall','Compare your writing and guided answers with the model. Mark only the points you genuinely remembered.')+
+   '<section class="blurt-review-screen"><div class="blurt-review-heading"><span class="rev-kicker">ROUND 02 · SELF-ASSESSMENT</span><h2>What did you get right?</h2><p>Your first-round writing and guided answers are kept here for comparison.</p><details class="blurt-draft"><summary>Open my first-round writing</summary><p>'+practiceSafe(draft||'No free-writing notes entered. Your guided answers are shown below.')+'</p></details></div>'+
+   '<div class="blurt-review-grid">'+targets.map((c,i)=>'<article class="blurt-review-item"><label class="blurt-check-line"><input type="checkbox" data-sci-blurt-check="'+i+'"><span><b>'+practiceSafe(c.topic)+' · '+practiceSafe(c.front)+'</b><small>Tick if you recalled the key fact accurately.</small></span></label><div class="blurt-guided-review"><span><b>Your answer:</b> '+practiceSafe(guided[i].answer||'Not entered')+'</span><span><b>Why it matters:</b> '+practiceSafe(guided[i].why||'Not entered')+'</span></div><button data-sci-blurt-reveal="'+i+'" aria-expanded="false">Reveal model answer</button><div class="blurt-model hidden" id="scienceBlurtModel'+i+'"><h4>Key scientific detail</h4><p>'+practiceSafe(c.back)+'</p><h4>Topic</h4><p>'+practiceSafe(c.topic)+'</p></div></article>').join('')+'</div>'+
+   '<div class="blurt-review-actions"><button id="scienceBlurtSecond">Second round: focus on missed points</button><button id="scienceBlurtFinish" class="primary">Finish session</button></div></section>');
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-sci-blurt-reveal]').forEach(b=>b.onclick=()=>{const box=$('scienceBlurtModel'+b.dataset.sciBlurtReveal),open=box.classList.toggle('hidden')===false;b.textContent=open?'Hide model answer':'Reveal model answer';b.setAttribute('aria-expanded',String(open))});
+  $('scienceBlurtSecond').onclick=()=>{const missed=targets.filter((x,i)=>!area.querySelector('[data-sci-blurt-check="'+i+'"]').checked);renderSecond(missed.length?missed:targets,draft,guided,missed.length===0)};
+  $('scienceBlurtFinish').onclick=()=>saveResult(draft,guided,null,[]);
+ }
+ function renderSecond(missed,draft,guided,allRemembered){
+  practiceMount(practiceHeader('Second round','Rebuild the knowledge points you missed without copying the model.')+
+   '<section class="blurt-second-screen"><span class="rev-kicker">ROUND 03 · TARGETED RECALL</span><h2>'+(allRemembered?'Strengthen your explanations.':'Turn weak spots into strengths.')+'</h2><p>'+missed.length+' point(s) in this focused round. Write from memory, then self-check.</p>'+
+   missed.map((c,i)=>'<article class="blurt-second-prompt"><b>'+practiceSafe(c.topic)+' · '+practiceSafe(c.front)+'</b><textarea class="field" rows="3" data-sci-second-draft="'+i+'" placeholder="Rebuild the scientific explanation…"></textarea><label><input type="checkbox" data-sci-second-check="'+i+'"> I rebuilt this point accurately</label></article>').join('')+
+   '<div class="blurt-review-actions"><button id="scienceBlurtBack">Back to review</button><button id="scienceBlurtFinishSecond" class="primary">Finish second round →</button></div></section>');
+  $('scienceBlurtBack').onclick=()=>showReview(draft,guided);
+  $('scienceBlurtFinishSecond').onclick=()=>saveResult(draft,guided,missed,[...$('reviseArea').querySelectorAll('[data-sci-second-check]:checked')].map(x=>Number(x.dataset.sciSecondCheck)),allRemembered);
+ }
+ function saveResult(draft,guided,missed,secondChecks,allRemembered=false){
+  const area=$('reviseArea'),firstChecks=area.querySelectorAll('[data-sci-blurt-check]:checked').length;
+  const firstScore=missed?(allRemembered?targets.length:targets.length-missed.length):firstChecks;
+  const score=missed?Math.min(targets.length,firstScore+secondChecks.length):firstChecks,accuracy=targets.length?Math.round(score/targets.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+score+'</b><span>Recalled</span></div><div><b>'+Math.max(0,targets.length-score)+'</b><span>To revisit</span></div><div><b>'+accuracy+'%</b><span>Recall score</span></div></div><div class="practice-result-columns"><section><h3>Free writing</h3><p>'+(draft?(draft.match(/\S+/g)||[]).length+' words written':'No free-writing notes entered')+'</p></section><section><h3>Guided prompts</h3><p>'+guided.filter(x=>x.answer||x.why).length+' of '+guided.length+' completed</p></section></div>';
+  scienceActivityAward('Blurting',score,targets.length,detail,started,scienceBlurting);
+ }
+ renderWrite();
+}
+function scienceMindMaps(){
+ const data=scienceActivityData(),uid=user?.id||'local',storageKey='rc-science-maps-'+uid,started=Date.now();
+ let mapId=null,mapTitle='My Science map',mapTopic=data.topics[0]?.id||'',nodes=[],edges=[],connectFrom=null,nodeCounter=0;
+ const colours={blue:'#315f91',teal:'#187b70',amber:'#a56b35',slate:'#4c5966'};
+ const topicFor=id=>data.group.topics.find(t=>t.id===id)||data.topics[0];
+ function makeNode(label,detail,x,y,color){nodeCounter++;return {id:'science-node-'+Date.now().toString(36)+'-'+nodeCounter,label:label||'New branch',detail:detail||'',x,y,color:color||'blue'}}
+ function createNodes(method,topicId){
+  const t=topicFor(topicId),center=makeNode(t.title+' · central idea',t.summary,43,39,'slate');let generated=[];
+  if(method==='template')generated=[
+   makeNode('Key terms','Define the most important scientific vocabulary.',12,12,'blue'),
+   makeNode('Structures','Name the parts and describe their functions.',67,12,'teal'),
+   makeNode('Processes','Explain how the process happens in order.',10,66,'amber'),
+   makeNode('Applications','Apply the science to a new situation.',68,66,'blue'),
+   makeNode('Exam practice','Use precise terms and linked reasoning.',40,82,'slate')
+  ];
+  else if(method==='topic')generated=[
+   ...t.terms.slice(0,3).map((raw,i)=>{const p=raw.split(' — ');return makeNode(p[0],p.slice(1).join(' — ')||raw,[9,69,12][i],[12,12,69][i],['blue','teal','amber'][i])}),
+   ...t.notes.slice(0,2).map((note,i)=>makeNode('Key idea '+(i+1),note,[68,39][i],[69,83][i],['blue','slate'][i]))
+  ];
+  nodes=[center,...generated];edges=generated.map(n=>({from:center.id,to:n.id}));connectFrom=null;mapId=null;mapTitle=method==='topic'?'Map · '+t.title:'My Science map';mapTopic=t.id;
+ }
+ function readSaved(){const raw=practiceReadStore(storageKey);return Array.isArray(raw.maps)?raw.maps:[]}
+ function renderHome(){
+  const saved=readSaved();
+  practiceMount(practiceHeader('Mind Maps','Choose a starting point, then build and save your own connected Science revision map.')+
+   '<section class="map-home"><div class="map-home-intro"><span class="rev-kicker">CREATE A SCIENCE MAP</span><h2>How do you want to start?</h2><p>Start with a blank canvas, use a revision structure or generate branches from a topic.</p></div>'+
+   '<div class="map-create-grid"><button data-science-map-create="blank"><span>01 · OPEN CANVAS</span><b>Start blank</b><small>Build every branch yourself.</small></button><button data-science-map-create="template"><span>02 · GUIDED STRUCTURE</span><b>Use a template</b><small>Begin with key terms, structures, processes and applications.</small></button><button data-science-map-create="topic"><span>03 · BUILD FROM SCIENCE</span><b>Generate from a topic</b><small>Use saved definitions and key facts as starting branches.</small></button></div>'+
+   '<div class="map-home-controls"><label>Science topic<select id="scienceMapTopic" class="field">'+data.group.topics.map(t=>'<option value="'+practiceSafe(t.id)+'" '+(t.id===mapTopic?'selected':'')+'>'+practiceSafe(t.title)+'</option>').join('')+'</select></label><label>Map name<input id="scienceMapTitle" class="field" value="'+practiceSafe(mapTitle)+'" maxlength="80"></label></div>'+
+   '<div class="map-saved-section"><div class="map-saved-heading"><div><span class="rev-kicker">YOUR LIBRARY</span><h2>Saved Science maps</h2></div><span>'+saved.length+' saved</span></div>'+(saved.length?saved.map(m=>'<article class="map-saved-row"><div><b>'+practiceSafe(m.title)+'</b><span>'+practiceSafe(m.topicTitle||'Science')+' · Updated '+new Date(m.updated_at).toLocaleDateString()+'</span></div><button data-science-map-open="'+practiceSafe(m.id)+'">Open map</button><button data-science-map-delete="'+practiceSafe(m.id)+'" class="quiet-danger">Delete</button></article>').join(''):'<p class="muted">Your saved maps will appear here. You can return to them and keep editing later.</p>')+'</div></section>');
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-science-map-create]').forEach(b=>b.onclick=()=>{mapTopic=$('scienceMapTopic').value;mapTitle=$('scienceMapTitle').value.trim()||'My Science map';createNodes(b.dataset.scienceMapCreate,mapTopic);renderEditor()});
+  area.querySelectorAll('[data-science-map-open]').forEach(b=>b.onclick=()=>{const m=readSaved().find(x=>x.id===b.dataset.scienceMapOpen);if(!m)return;mapId=m.id;mapTitle=m.title;mapTopic=m.topicId;nodes=m.data.nodes||[];edges=m.data.edges||[];nodeCounter=nodes.length;renderEditor()});
+  area.querySelectorAll('[data-science-map-delete]').forEach(b=>b.onclick=()=>{const raw=practiceReadStore(storageKey),maps=readSaved().filter(x=>x.id!==b.dataset.scienceMapDelete);raw.maps=maps;practiceWriteStore(storageKey,raw);renderHome()});
+ }
+ function edgeMarkup(){return edges.map(e=>{const a=nodes.find(n=>n.id===e.from),b=nodes.find(n=>n.id===e.to);if(!a||!b)return '';return '<line x1="'+(Number(a.x)*10+90)+'" y1="'+(Number(a.y)*6.2+35)+'" x2="'+(Number(b.x)*10+90)+'" y2="'+(Number(b.y)*6.2+35)+'" stroke="var(--map-line)" stroke-width="2.2" stroke-linecap="round" />'}).join('')}
+ function renderEditor(){
+  connectFrom=null;
+  const nodeHtml=nodes.map(n=>'<article class="map-node map-node-'+practiceSafe(n.color)+'" data-science-map-node="'+practiceSafe(n.id)+'" style="left:'+n.x+'%;top:'+n.y+'%"><div class="map-node-head"><button class="map-drag-handle" data-science-map-drag="'+practiceSafe(n.id)+'" aria-label="Drag branch to reposition">MOVE</button><button class="map-connect" data-science-map-connect="'+practiceSafe(n.id)+'">Connect</button></div><input class="map-node-title" data-science-map-field="label" data-science-map-id="'+practiceSafe(n.id)+'" value="'+practiceSafe(n.label)+'" aria-label="Branch title"><textarea data-science-map-field="detail" data-science-map-id="'+practiceSafe(n.id)+'" rows="2" placeholder="Add scientific explanation, examples or equations">'+practiceSafe(n.detail)+'</textarea><div class="map-node-foot"><select data-science-map-colour="'+practiceSafe(n.id)+'" aria-label="Branch colour">'+Object.keys(colours).map(k=>'<option value="'+k+'" '+(k===n.color?'selected':'')+'>'+k+'</option>').join('')+'</select><button data-science-map-remove="'+practiceSafe(n.id)+'" class="quiet-danger">Remove</button></div></article>').join('');
+  practiceMount(practiceHeader('Mind Map editor','Move branches, write your own scientific notes and connect related ideas. Your map can be saved and reopened.')+
+   '<section class="map-editor"><div class="map-editor-toolbar"><div class="map-editor-name"><label>MAP NAME<input id="scienceMapEditorTitle" class="field" value="'+practiceSafe(mapTitle)+'" maxlength="80"></label><span class="map-topic-label">'+practiceSafe(topicFor(mapTopic).title)+'</span></div><div class="map-editor-actions"><button id="scienceMapAdd">Add branch +</button><button id="scienceMapChallenge">Memory challenge</button><button id="scienceMapSave" class="primary">Save map</button></div></div><div class="map-editor-hint" id="scienceMapHint">Drag branches by their MOVE handle. Select Connect on two branches to draw a link between them.</div><div id="scienceMapCanvas" class="map-canvas"><svg class="map-connections" viewBox="0 0 1000 620" preserveAspectRatio="none" aria-hidden="true">'+edgeMarkup()+'</svg>'+nodeHtml+'</div><p id="scienceMapSaveMessage" aria-live="polite"></p><div class="map-editor-bottom"><button id="scienceMapBack">Back to saved maps</button><span>'+nodes.length+' branches · '+edges.length+' connections</span></div></section>');
+  const area=$('reviseArea');$('scienceMapEditorTitle').oninput=()=>{mapTitle=$('scienceMapEditorTitle').value};
+  $('scienceMapAdd').onclick=()=>{const n=nodes.length,coords=[[8,16],[69,16],[8,68],[69,68],[39,82]][n%5],node=makeNode('New branch','',coords[0],coords[1],['blue','teal','amber','slate'][n%4]);nodes.push(node);if(nodes.length>1)edges.push({from:nodes[0].id,to:node.id});renderEditor()};
+  $('scienceMapChallenge').onclick=renderChallenge;
+  $('scienceMapSave').onclick=()=>{
+   mapTitle=$('scienceMapEditorTitle').value.trim()||'My Science map';
+   const raw=practiceReadStore(storageKey),maps=readSaved(),entry={id:mapId||('smap-'+Date.now().toString(36)),title:mapTitle,topicId:mapTopic,topicTitle:topicFor(mapTopic).title,updated_at:new Date().toISOString(),data:{nodes,edges}};
+   const ix=maps.findIndex(x=>x.id===entry.id);if(ix>=0)maps[ix]=entry;else maps.unshift(entry);raw.maps=maps;practiceWriteStore(storageKey,raw);mapId=entry.id;$('scienceMapSaveMessage').textContent='Map saved on this device. You can reopen it from Mind Maps.';
+  };
+  $('scienceMapBack').onclick=renderHome;
+  area.querySelectorAll('[data-science-map-field]').forEach(el=>el.addEventListener('input',()=>{const n=nodes.find(x=>x.id===el.dataset.scienceMapId);if(n)n[el.dataset.scienceMapField]=el.value}));
+  area.querySelectorAll('[data-science-map-colour]').forEach(el=>el.onchange=()=>{const n=nodes.find(x=>x.id===el.dataset.scienceMapColour);if(n){n.color=el.value;renderEditor()}});
+  area.querySelectorAll('[data-science-map-remove]').forEach(b=>b.onclick=()=>{nodes=nodes.filter(n=>n.id!==b.dataset.scienceMapRemove);edges=edges.filter(e=>e.from!==b.dataset.scienceMapRemove&&e.to!==b.dataset.scienceMapRemove);renderEditor()});
+  area.querySelectorAll('[data-science-map-connect]').forEach(b=>b.onclick=()=>{const id=b.dataset.scienceMapConnect;if(!connectFrom){connectFrom=id;$('scienceMapHint').textContent='Now select the branch you want to connect to.';b.classList.add('selected');return}if(connectFrom!==id&&!edges.some(e=>(e.from===connectFrom&&e.to===id)||(e.from===id&&e.to===connectFrom)))edges.push({from:connectFrom,to:id});connectFrom=null;renderEditor()});
+  const canvas=$('scienceMapCanvas');
+  canvas.querySelectorAll('[data-science-map-drag]').forEach(handle=>handle.onpointerdown=e=>{
+   e.preventDefault();const id=handle.dataset.scienceMapDrag,node=nodes.find(n=>n.id===id);if(!node)return;const rect=canvas.getBoundingClientRect(),sx=e.clientX,sy=e.clientY,ox=node.x,oy=node.y;
+   handle.setPointerCapture?.(e.pointerId);
+   const move=ev=>{node.x=Math.max(3,Math.min(88,ox+(ev.clientX-sx)/rect.width*100));node.y=Math.max(3,Math.min(78,oy+(ev.clientY-sy)/rect.height*100));const el=canvas.querySelector('[data-science-map-node="'+id+'"]');if(el){el.style.left=node.x+'%';el.style.top=node.y+'%'}const svg=canvas.querySelector('svg');if(svg)svg.innerHTML=edgeMarkup()};
+   const end=()=>{handle.removeEventListener('pointermove',move);handle.removeEventListener('pointerup',end);handle.removeEventListener('pointercancel',end)};
+   handle.addEventListener('pointermove',move);handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
+  });
+ }
+ function renderChallenge(){
+  const branches=nodes.slice(1);
+  practiceMount(practiceHeader('Mind map memory challenge','Rebuild the structure from memory before revealing the original branches.')+
+   '<section class="map-challenge-screen"><span class="rev-kicker">RECALL WITHOUT LOOKING</span><h2>'+practiceSafe(mapTitle)+'</h2><p>Write what belongs in each branch, then reveal the saved map and self-assess.</p>'+
+   branches.map((n,i)=>'<article class="map-memory-item"><span class="map-memory-index">BRANCH '+(i+1)+'</span><textarea class="field" rows="2" data-science-map-memory="'+i+'" placeholder="What was this branch about?"></textarea><label><input type="checkbox" data-science-map-memory-check="'+i+'"> I recalled this branch accurately</label><button data-science-map-memory-reveal="'+i+'">Reveal branch</button><p class="hidden" id="scienceMapMemoryModel'+i+'"><b>'+practiceSafe(n.label)+'</b> · '+practiceSafe(n.detail)+'</p></article>').join('')+
+   '<div class="map-memory-actions"><button id="scienceMapChallengeBack">Back to editor</button><button id="scienceMapChallengeFinish" class="primary">Finish challenge</button></div></section>');
+  const area=$('reviseArea');area.querySelectorAll('[data-science-map-memory-reveal]').forEach(b=>b.onclick=()=>{$('scienceMapMemoryModel'+b.dataset.scienceMapMemoryReveal).classList.toggle('hidden');b.textContent=b.textContent==='Reveal branch'?'Hide branch':'Reveal branch'});
+  $('scienceMapChallengeBack').onclick=renderEditor;$('scienceMapChallengeFinish').onclick=()=>{const correct=area.querySelectorAll('[data-science-map-memory-check]:checked').length,accuracy=branches.length?Math.round(correct/branches.length*100):100,detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Recalled</span></div><div><b>'+Math.max(0,branches.length-correct)+'</b><span>To revisit</span></div><div><b>'+accuracy+'%</b><span>Recall score</span></div></div>';scienceActivityAward('Mind Maps',correct,branches.length,detail,started,scienceMindMaps)};
+ }
+ renderHome();
+}
+function scienceQuickQuiz(){
+ const data=scienceActivityData(),started=Date.now(),area=$('reviseArea');
+ const definitions=data.terms,allTopics=data.group.topics;
+ let questions=[],answers=[],position=0,difficulty='core',feedbackStyle='immediate',timed=false,remaining=240,quizTimer=null;
+ const multiByTopic={
+  'cell-biology':{prompt:'Select all accurate statements about cell structures.',options:[['a','Animal and plant cells are eukaryotic.',true],['b','Bacterial cells are prokaryotic.',true],['c','Bacterial cells contain a nucleus.',false],['d','Ribosomes carry out aerobic respiration.',false]],explanation:'Eukaryotic cells have DNA enclosed in a nucleus. Bacteria are prokaryotic and have no nucleus; mitochondria are the site of aerobic respiration.'},
+  organisation:{prompt:'Select all accurate statements about blood vessels.',options:[['a','Arteries carry blood away from the heart.',true],['b','Veins carry blood towards the heart.',true],['c','Capillaries carry blood away from the heart at high pressure.',false],['d','Veins carry blood away from the heart.',false]],explanation:'Arteries carry blood away, veins return it, and capillaries allow exchange with tissues.'},
+  'atomic-structure':{prompt:'Select all accurate statements about atomic structure.',options:[['a','Atomic number is the number of protons.',true],['b','Isotopes have the same number of protons.',true],['c','Mass number is the number of electrons only.',false],['d','Neutrons have a relative charge of +1.',false]],explanation:'Atomic number counts protons. Isotopes share a proton number but have different neutron numbers.'},
+  bonding:{prompt:'Select all accurate statements about bonding.',options:[['a','Ionic bonding involves electron transfer.',true],['b','Covalent bonding involves a shared pair of electrons.',true],['c','Metallic bonding is attraction between negative ions.',false],['d','Simple molecular substances have strong forces between molecules.',false]],explanation:'Ionic bonding forms oppositely charged ions; covalent bonds share electron pairs; metallic bonding involves positive ions and delocalised electrons.'},
+  energy:{prompt:'Select all accurate statements about energy.',options:[['a','Energy cannot be created or destroyed.',true],['b','Energy can be transferred by heating.',true],['c','Dissipation makes energy disappear.',false],['d','Efficiency is total energy supplied divided by useful energy.',false]],explanation:'Energy is conserved. Dissipated energy spreads into less useful stores, often heating the surroundings.'},
+  electricity:{prompt:'Select all accurate statements about circuits.',options:[['a','Current is the rate of flow of charge.',true],['b','Potential difference is energy transferred per unit charge.',true],['c','Current is always the same in every branch of a parallel circuit.',false],['d','Resistance is current divided by potential difference.',false]],explanation:'Current is charge flow per second; potential difference is energy per charge; R = V ÷ I.'}
+ };
+ const falseByTopic={
+  'cell-biology':['Bacterial cells have a nucleus containing their DNA.','Mitochondria are the structures that make proteins.'],
+  organisation:['Veins carry blood away from the heart.','Enzymes are used up permanently in the reactions they catalyse.'],
+  'atomic-structure':['The atomic number is the total number of protons and neutrons.','Isotopes of an element have different numbers of protons.'],
+  bonding:['Covalent bonding involves transferring electrons to form ions.','Metallic bonding is caused by shared electron pairs between two atoms.'],
+  energy:['Energy is created when a device wastes energy.','Efficiency is the total energy supplied divided by useful energy transferred.'],
+  electricity:['In a series circuit, current is different at every point.','Potential difference is measured in amperes.']
+ };
+ function bank(){
+  const out={single:[],truefalse:[],multi:[],gap:[]};
+  for(const t of data.topics){
+   const localTerms=t.terms.map(raw=>{const p=raw.split(' — ');return {term:p[0],definition:p.slice(1).join(' — ')||raw,topic:t.title}});
+   for(const item of localTerms){
+    const distractors=practiceShuffle(definitions.filter(x=>x.term!==item.term)).slice(0,3).map(x=>x.term);
+    const options=practiceShuffle([item.term,...distractors]);
+    out.single.push({type:'single',topic:t.title,prompt:'Which scientific term matches this definition?',display:item.definition,options,correct:item.term,explanation:item.term+' means '+item.definition});
+   }
+   t.notes.forEach((note,i)=>out.truefalse.push({type:'truefalse',topic:t.title,prompt:note,display:'',correct:'true',explanation:'This statement matches the key knowledge for '+t.title+'.'}));
+   (falseByTopic[t.id]||[]).forEach(statement=>out.truefalse.push({type:'truefalse',topic:t.title,prompt:statement,display:'',correct:'false',explanation:'This statement is false. Review the relevant fact: '+t.notes[0]}));
+   const multi=multiByTopic[t.id];
+   if(multi)out.multi.push({type:'multi',topic:t.title,prompt:multi.prompt,display:t.title,options:multi.options.map(x=>({value:x[0],label:x[1],correct:x[2]})),correct:multi.options.filter(x=>x[2]).map(x=>x[0]),explanation:multi.explanation});
+   const gapWords={
+    'cell-biology':['eukaryotic','prokaryotic','nucleus','ribosomes'],
+    organisation:['insoluble','catalysts','double','capillaries'],
+    'atomic-structure':['nucleus','charge','protons','neutrons'],
+    bonding:['transfer','shared','delocalised','molecular'],
+    energy:['chemical','heating','conserved','efficiency'],
+    electricity:['current','volts','resistance','parallel']
+   }[t.id]||[];
+   t.notes.forEach((note,i)=>{
+    const word=gapWords[i]||'';
+    const at=word?note.toLowerCase().indexOf(word.toLowerCase()):-1;
+    if(at>=0){const masked=note.slice(0,at)+'□□□□'+note.slice(at+word.length);out.gap.push({type:'gap',topic:t.title,prompt:'Complete the missing word in this Science statement.',display:masked,correct:word.toLowerCase(),expected:word,explanation:note})}
+   });
+  }
+  const singleByTopic={
+   'cell-biology':{prompt:'Which combination contains only structures found in plant cells but not animal cells?',options:['Cell wall, chloroplasts and permanent vacuole','Nucleus, mitochondria and ribosomes','Cell membrane, cytoplasm and mitochondria','Ribosomes, nucleus and cell wall'],correct:'Cell wall, chloroplasts and permanent vacuole',explanation:'Plant cells have a cellulose cell wall and permanent vacuole; photosynthetic plant cells also have chloroplasts.'},
+   organisation:{prompt:'Which blood vessel carries blood away from the heart?',options:['Artery','Vein','Capillary','Venule'],correct:'Artery',explanation:'Arteries carry blood away from the heart. Veins carry blood towards it and capillaries allow exchange.'},
+   'atomic-structure':{prompt:'An atom has 11 protons and 12 neutrons. What is its mass number?',options:['23','11','12','1'],correct:'23',explanation:'Mass number is protons plus neutrons: 11 + 12 = 23.'},
+   bonding:{prompt:'Which type of bonding involves a shared pair of electrons?',options:['Covalent','Ionic','Metallic','Hydrogen'],correct:'Covalent',explanation:'A covalent bond is a shared pair of electrons between atoms.'},
+   energy:{prompt:'A device transfers 40 J usefully from 100 J supplied. What is its efficiency?',options:['40%','60%','250%','2.5%'],correct:'40%',explanation:'Efficiency = useful energy transferred ÷ total energy supplied × 100 = 40 ÷ 100 × 100 = 40%.'},
+   electricity:{prompt:'A 6 V lamp has a current of 2 A. What is its resistance?',options:['3 Ω','12 Ω','4 Ω','0.33 Ω'],correct:'3 Ω',explanation:'Resistance = potential difference ÷ current = 6 ÷ 2 = 3 Ω.'}
+  };
+  data.topics.forEach(t=>{const item=singleByTopic[t.id];if(item)out.single.push({type:'single',topic:t.title,...item,display:t.title})});
+  return out;
+ }
+ const bankData=bank();
+ function renderSetup(){
+  practiceMount(practiceHeader('Quick Quiz','Choose the formats, difficulty and feedback style for your Science round.')+
+   '<section class="quiz-setup"><div class="quiz-setup-intro"><span class="rev-kicker">BUILD YOUR SCIENCE ROUND</span><h2>Test what you know.</h2><p>Mix recall, scientific vocabulary, calculations and application. Questions are drawn from your selected topic.</p></div>'+
+   '<div class="quiz-settings-grid"><section><h3>Question formats</h3><div class="quiz-format-list"><label><input type="checkbox" data-sci-qtype="single" checked><span><b>Multiple choice</b><small>Identify the correct scientific term or result.</small></span></label><label><input type="checkbox" data-sci-qtype="truefalse" checked><span><b>True or false</b><small>Judge a precise scientific statement.</small></span></label><label><input type="checkbox" data-sci-qtype="multi" checked><span><b>Select all that apply</b><small>Choose every accurate scientific statement.</small></span></label><label><input type="checkbox" data-sci-qtype="gap" checked><span><b>Fill the missing word</b><small>Recall a key term or scientific fact.</small></span></label></div></section>'+
+   '<section><h3>Difficulty</h3><div class="quiz-choice-list"><button data-sci-quiz-level="core" class="selected"><b>Core</b><small>Secure the important knowledge · up to 8 questions</small></button><button data-sci-quiz-level="challenge"><b>Challenge</b><small>More demanding recall and application · up to 10 questions</small></button></div><h3 class="quiz-subheading">Feedback style</h3><div class="quiz-feedback-list"><label><input type="radio" name="scienceQuizFeedback" value="immediate" checked>Immediate explanations</label><label><input type="radio" name="scienceQuizFeedback" value="end">Review all answers at the end</label><label><input type="radio" name="scienceQuizFeedback" value="minimal">Minimal feedback</label></div><label class="quiz-timer-choice"><input type="checkbox" id="scienceQuizTimed"> Add an optional timer</label></section></div>'+
+   '<div class="quiz-setup-footer"><span>Science practice · '+data.cards.length+' available recall cards</span><button id="scienceQuizStart" class="primary">Start quiz →</button></div><p id="scienceQuizSetupError" role="status"></p></section>');
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-sci-quiz-level]').forEach(b=>b.onclick=()=>{difficulty=b.dataset.sciQuizLevel;area.querySelectorAll('[data-sci-quiz-level]').forEach(x=>x.classList.toggle('selected',x===b))});
+  $('scienceQuizStart').onclick=()=>{
+   const selected=[...area.querySelectorAll('[data-sci-qtype]:checked')].map(x=>x.dataset.sciQtype);
+   if(!selected.length){$('scienceQuizSetupError').textContent='Choose at least one question format.';return}
+   feedbackStyle=area.querySelector('input[name="scienceQuizFeedback"]:checked')?.value||'immediate';timed=$('scienceQuizTimed').checked;
+   questions=practiceShuffle(selected.flatMap(type=>bankData[type]||[]));
+   const count=difficulty==='challenge'?10:8;questions=questions.slice(0,Math.min(count,questions.length));
+   if(!questions.length){$('scienceQuizSetupError').textContent='There are not enough questions for that format in this topic yet.';return}
+   answers=[];position=0;remaining=difficulty==='challenge'?300:240;showQuestion();if(timed)startQuizTimer();
+  };
+ }
+ function timerText(){return Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0')}
+ function startQuizTimer(){quizTimer=setInterval(()=>{remaining=Math.max(0,remaining-1);if($('scienceQuizClock'))$('scienceQuizClock').textContent=timerText();if(remaining===0){clearInterval(quizTimer);quizTimer=null;window.rcPracticeTimer=null;finishQuiz(true)}},1000);window.rcPracticeTimer=quizTimer}
+ function showQuestion(){
+  const q=questions[position],clock=timed?'<span class="quiz-clock" id="scienceQuizClock">'+timerText()+'</span>':'';
+  let ui='';
+  if(q.type==='single')ui='<div class="quiz-answer-options">'+q.options.map(x=>'<button data-sci-quiz-answer="'+practiceSafe(x)+'">'+practiceSafe(x)+'</button>').join('')+'</div>';
+  if(q.type==='truefalse')ui='<div class="quiz-answer-options quiz-binary"><button data-sci-quiz-answer="true">True</button><button data-sci-quiz-answer="false">False</button></div>';
+  if(q.type==='multi')ui='<div class="quiz-answer-options">'+q.options.map(x=>'<label class="quiz-multi-option"><input type="checkbox" data-sci-quiz-multi="'+practiceSafe(x.value)+'"><span>'+practiceSafe(x.label)+'</span></label>').join('')+'</div><button id="scienceQuizSubmitMulti" class="primary">Check selections</button>';
+  if(q.type==='gap')ui='<div class="quiz-gap-answer"><input id="scienceQuizGapAnswer" class="field" placeholder="Type the missing word"><button id="scienceQuizGapSubmit" class="primary">Submit answer</button></div>';
+  practiceMount(practiceHeader('Quick Quiz','Question '+(position+1)+' of '+questions.length+' · '+(difficulty==='challenge'?'Challenge':'Core'))+
+   '<section class="quiz-question-screen"><div class="quiz-question-top"><span class="rev-kicker">'+q.type.toUpperCase().replace('TRUEFALSE','TRUE OR FALSE').replace('MULTI','SELECT ALL')+'</span>'+clock+'</div>'+practiceProgressBar(position+1,questions.length)+
+   '<h2>'+practiceSafe(q.prompt)+'</h2>'+(q.display?'<blockquote class="quiz-question-quote">'+practiceSafe(q.display)+'</blockquote>':'')+ui+'<div id="scienceQuizFeedback" aria-live="polite"></div><div class="quiz-question-footer"><span>'+questions.length+' questions · '+difficulty+'</span><button id="scienceQuizSkip">Skip question</button></div></section>');
+  const area=$('reviseArea');
+  area.querySelectorAll('[data-sci-quiz-answer]').forEach(b=>b.onclick=()=>answerQuestion(b.dataset.sciQuizAnswer,q));
+  $('scienceQuizSubmitMulti')?.addEventListener('click',()=>answerQuestion([...area.querySelectorAll('[data-sci-quiz-multi]:checked')].map(x=>x.dataset.sciQuizMulti),q));
+  $('scienceQuizGapSubmit')?.addEventListener('click',()=>answerQuestion($('scienceQuizGapAnswer').value,q));
+  $('scienceQuizGapAnswer')?.addEventListener('keydown',e=>{if(e.key==='Enter')answerQuestion($('scienceQuizGapAnswer').value,q)});
+  $('scienceQuizSkip').onclick=()=>{answers.push({q,answer:'Skipped',correct:false});moveNext()};
+ }
+ function normalise(v){return String(v||'').toLowerCase().replace(/[“”"'.,!?;:…]/g,'').replace(/\s+/g,' ').trim()}
+ function answerQuestion(answer,q){
+  if(answers.some(x=>x.q===q))return;
+  const shown=Array.isArray(answer)?answer:[answer];let correct=false;
+  if(q.type==='multi')correct=q.correct.length===shown.length&&q.correct.every(x=>shown.includes(x));
+  else if(q.type==='gap')correct=normalise(answer).replace(/[^\w]/g,'')===q.correct;
+  else correct=normalise(answer)===normalise(q.correct);
+  answers.push({q,answer:shown,correct});
+  if(feedbackStyle==='immediate'){
+   area.querySelectorAll('[data-sci-quiz-answer],[data-sci-quiz-multi]').forEach(x=>x.disabled=true);
+   $('scienceQuizSubmitMulti')?.setAttribute('disabled','disabled');$('scienceQuizGapSubmit')?.setAttribute('disabled','disabled');
+   $('scienceQuizFeedback').innerHTML='<div class="quiz-feedback '+(correct?'correct':'incorrect')+'"><b>'+(correct?'That’s right.':'Not quite.')+'</b><p>'+practiceSafe(q.explanation||'Review the scientific statement and the key knowledge.')+'</p><button id="scienceQuizContinue" class="primary">Continue →</button></div>';
+   $('scienceQuizContinue').onclick=moveNext;
+  }else moveNext();
+ }
+ function moveNext(){position++;if(position>=questions.length)finishQuiz(false);else showQuestion()}
+ function answerLabel(q){if(q.type==='multi')return q.options.filter(x=>q.correct.includes(x.value)).map(x=>x.label).join(' · ');if(q.type==='truefalse')return q.correct==='true'?'True':'False';return q.expected||q.correct}
+ function finishQuiz(timeUp){
+  if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}quizTimer=null;
+  const correct=answers.filter(x=>x.correct).length,accuracy=questions.length?Math.round(correct/questions.length*100):0,strong=[...new Set(answers.filter(x=>x.correct).map(x=>x.q.topic))],weak=[...new Set(answers.filter(x=>!x.correct).map(x=>x.q.topic))];
+  const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Correct</span></div><div><b>'+Math.max(0,questions.length-correct)+'</b><span>To review</span></div><div><b>'+accuracy+'%</b><span>Accuracy</span></div></div><div class="practice-result-columns"><section><h3>Strengths</h3><p>'+(strong.length?strong.map(practiceSafe).join(' · '):'Keep practising to build secure knowledge.')+'</p></section><section><h3>Knowledge gaps</h3><p>'+(weak.length?weak.map(practiceSafe).join(' · '):'No weak topics recorded in this round.')+'</p></section></div><div class="quiz-detailed-review"><h3>Question-by-question review</h3>'+answers.map((x,i)=>'<article><span>'+(x.correct?'CORRECT':'REVIEW')+' · '+(i+1)+'</span><b>'+practiceSafe(x.q.prompt)+'</b>'+(x.q.display?'<p>'+practiceSafe(x.q.display)+'</p>':'')+'<small>Answer: '+practiceSafe(answerLabel(x.q))+'</small>'+(feedbackStyle==='minimal'?'':'<p>'+practiceSafe(x.q.explanation||'')+'</p>')+'</article>').join('')+'</div><p>'+(timeUp?'The timer ended before every question was answered. ':'')+'Your review is grouped by Science topic.</p>';
+  scienceActivityAward('Quick Quiz',correct,questions.length,detail,started,scienceQuickQuiz);
+ }
+ renderSetup();
+}
+function scienceMatchGaps(){
+ const data=scienceActivityData(),started=Date.now(),area=$('reviseArea');
+ let mode='matching',matchFormat='term-definition',gapFormat='typed',rapid=false,timed=false,remaining=180,tick=null,items=[],rightOrder=[],matched=[],selected=null,attempts=[],questionIndex=0,score=0;
+ const timerText=()=>Math.floor(remaining/60)+':'+String(remaining%60).padStart(2,'0');
+ function stopTimer(){if(tick)clearInterval(tick);tick=null;if(window.rcPracticeTimer){clearInterval(window.rcPracticeTimer);window.rcPracticeTimer=null}}
+ function renderSetup(){
+  practiceMount(practiceHeader('Match Up & Fill the Gaps','Choose a matching challenge or fill-the-gap round. Both can be played in rapid-fire mode.')+
+   '<section class="match-setup"><span class="rev-kicker">CHOOSE YOUR CHALLENGE</span><h2>Make the connections.</h2><div class="match-mode-grid"><button data-sci-game-mode="matching" class="selected"><b>Match Up</b><small>Pair scientific terms, definitions, structures and their functions.</small></button><button data-sci-game-mode="gaps"><b>Fill the Gaps</b><small>Complete a scientific statement using typed or multiple-choice answers.</small></button></div>'+
+   '<div class="match-settings-grid"><section id="scienceMatchingSettings"><h3>Matching format</h3><label><input type="radio" name="scienceMatchFormat" value="term-definition" checked> Term → definition</label><label><input type="radio" name="scienceMatchFormat" value="topic-term"> Topic → key term</label><label><input type="radio" name="scienceMatchFormat" value="question-answer"> Recall question → answer</label><label><input type="radio" name="scienceMatchFormat" value="process-note"> Process → explanation</label><p class="match-selection-hint">Select a box on the left, then select its matching box on the right.</p></section><section id="scienceGapSettings" class="hidden"><h3>Answer format</h3><label><input type="radio" name="scienceGapFormat" value="typed" checked> Type the missing word</label><label><input type="radio" name="scienceGapFormat" value="choice"> Choose from options</label></section></div>'+
+   '<div class="match-session-options"><label><input type="checkbox" id="scienceMatchRapid"> Rapid-fire · 60 seconds</label><label><input type="checkbox" id="scienceMatchTimed"> Optional 3-minute timer</label></div><div class="match-setup-footer"><span>Science formats: 4 · Tap-to-match · Gap formats: 2</span><button class="primary" id="scienceMatchStart">Start challenge →</button></div></section>');
+  area.querySelectorAll('[data-sci-game-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.sciGameMode;area.querySelectorAll('[data-sci-game-mode]').forEach(x=>x.classList.toggle('selected',x===b));$('scienceMatchingSettings').classList.toggle('hidden',mode!=='matching');$('scienceGapSettings').classList.toggle('hidden',mode!=='gaps')});
+  $('scienceMatchStart').onclick=()=>{
+   matchFormat=area.querySelector('input[name="scienceMatchFormat"]:checked')?.value||'term-definition';gapFormat=area.querySelector('input[name="scienceGapFormat"]:checked')?.value||'typed';
+   rapid=$('scienceMatchRapid').checked;timed=rapid||$('scienceMatchTimed').checked;remaining=rapid?60:180;
+   if(mode==='matching')startMatching();else startGaps();if(timed)startTimer();
+  };
+ }
+ function startTimer(){tick=setInterval(()=>{remaining=Math.max(0,remaining-1);if($('scienceMatchClock'))$('scienceMatchClock').textContent=timerText();if(remaining===0){stopTimer();mode==='matching'?finishMatching(true):finishGaps(true)}},1000);window.rcPracticeTimer=tick}
+ function makePairs(){
+  let rows=[];
+  if(matchFormat==='term-definition')rows=data.terms.map(x=>({left:x.term,right:x.definition,topic:x.topic,explanation:x.definition}));
+  if(matchFormat==='topic-term')rows=data.terms.map(x=>({left:x.topic,right:x.term,topic:x.topic,explanation:x.definition}));
+  if(matchFormat==='question-answer')rows=data.cards.filter(x=>x.kind==='knowledge').map(x=>({left:x.front,right:x.back,topic:x.topic,explanation:x.back}));
+  if(matchFormat==='process-note')rows=data.cards.filter(x=>x.kind==='knowledge').map(x=>({left:x.topic+' · '+x.front,right:x.back,topic:x.topic,explanation:x.back}));
+  return practiceShuffle(rows).slice(0,Math.min(5,rows.length)).map((x,i)=>({...x,id:'science-pair-'+i}));
+ }
+ function startMatching(){items=makePairs();rightOrder=practiceShuffle(items);matched=[];selected=null;attempts=[];drawMatching()}
+ function drawMatching(){
+  const left=items.filter(x=>!matched.includes(x.id)),right=rightOrder.filter(x=>!matched.includes(x.id));
+  practiceMount(practiceHeader('Match Up',rapid?'Rapid-fire · match as many pairs as you can.':'Choose one item on the left, then its match on the right.')+
+   '<section class="match-play-screen"><div class="match-play-meta"><span class="rev-kicker">'+matchFormat.replace('-',' → ').toUpperCase()+'</span><span>'+matched.length+' / '+items.length+' pairs matched</span>'+(timed?'<strong class="quiz-clock" id="scienceMatchClock">'+timerText()+'</strong>':'')+'</div>'+practiceProgressBar(matched.length,items.length)+
+   '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-sci-match-left="'+x.id+'">'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-sci-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="scienceMatchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="scienceMatchEnd">Finish early</button><button id="scienceMatchReset" class="quiet-button">Reset pair selection</button></div></section>');
+  const tryPair=id=>{
+   if(!selected){$('scienceMatchStatus').textContent='Choose an item on the left first.';return}
+   const source=items.find(x=>x.id===selected),target=items.find(x=>x.id===id),ok=selected===id;attempts.push({left:source?.left,right:target?.right,correct:ok,topic:source?.topic});
+   if(ok){matched.push(selected);selected=null;if(matched.length===items.length){finishMatching(false);return}drawMatching();$('scienceMatchStatus').textContent='Pair matched.'}
+   else{selected=null;drawMatching();$('scienceMatchStatus').textContent='Not a match. Try another connection.'}
+  };
+  area.querySelectorAll('[data-sci-match-left]').forEach(b=>b.onclick=()=>{selected=b.dataset.sciMatchLeft;drawMatching()});
+  area.querySelectorAll('[data-sci-match-right]').forEach(b=>b.onclick=()=>tryPair(b.dataset.sciMatchRight));
+  $('scienceMatchEnd').onclick=()=>finishMatching(false);$('scienceMatchReset').onclick=()=>{selected=null;drawMatching()};
+ }
+ function finishMatching(timeUp){
+  stopTimer();const correct=matched.length,accuracy=items.length?Math.round(correct/items.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+correct+'</b><span>Pairs matched</span></div><div><b>'+Math.max(0,items.length-correct)+'</b><span>Unmatched</span></div><div><b>'+attempts.length+'</b><span>Attempts</span></div></div><div class="quiz-detailed-review"><h3>Pair review</h3>'+items.map(x=>'<article><span>'+(matched.includes(x.id)?'MATCHED':'REVIEW')+'</span><b>'+practiceSafe(x.left)+'</b><p>Correct pair: '+practiceSafe(x.right)+'</p><small>'+practiceSafe(x.explanation)+'</small></article>').join('')+'</div><p>'+(timeUp?'Time is up. ':'')+'Matched '+correct+' of '+items.length+' pairs.</p>';
+  scienceActivityAward(rapid?'Rapid-fire':'Match Up',correct,items.length,detail,started,scienceMatchGaps);
+ }
+ function makeGapItems(){
+  const gaps={
+   'cell-biology':['eukaryotic','prokaryotic','nucleus','ribosomes'],
+   organisation:['insoluble','catalysts','double','capillaries'],
+   'atomic-structure':['nucleus','charge','protons','neutrons'],
+   bonding:['transfer','shared','delocalised','molecular'],
+   energy:['chemical','heating','conserved','efficiency'],
+   electricity:['current','volts','resistance','parallel']
+  };
+  return data.topics.flatMap(t=>t.notes.map((note,i)=>{const word=(gaps[t.id]||[])[i]||'',at=word?note.toLowerCase().indexOf(word.toLowerCase()):-1;return at<0?null:{...data.cards.find(c=>c.topicId===t.id&&c.kind==='knowledge'&&c.back===note),missing:word,masked:note.slice(0,at)+'□□□□'+note.slice(at+word.length)}}).filter(Boolean));
+ }
+ function startGaps(){items=practiceShuffle(makeGapItems()).slice(0,Math.min(rapid?20:6,makeGapItems().length));questionIndex=0;score=0;attempts=[];drawGap()}
+ function drawGap(){
+  const c=items[questionIndex];if(!c){finishGaps(false);return}
+  let ui;
+  if(gapFormat==='choice'){
+   const distractors=practiceShuffle(data.cards.flatMap(x=>[...x.back.matchAll(/\b[A-Za-z]{4,}\b/g)].map(m=>m[0])).filter(w=>w.toLowerCase()!==c.missing.toLowerCase())).slice(0,3);
+   ui='<div class="gap-choice-grid">'+practiceShuffle([c.missing,...distractors]).map(w=>'<button data-sci-gap-answer="'+practiceSafe(w)+'">'+practiceSafe(w)+'</button>').join('')+'</div>';
+  }else ui='<div class="gap-typed-row"><input id="scienceGapTyped" class="field" placeholder="Type the missing word"><button id="scienceGapSubmit" class="primary">Check answer</button></div>';
+  practiceMount(practiceHeader('Fill the Gaps',rapid?'Rapid-fire · complete as many Science statements as you can.':'Recall the exact scientific word missing from the statement.')+
+   '<section class="gap-play-screen"><div class="match-play-meta"><span class="rev-kicker">'+(gapFormat==='choice'?'MULTIPLE CHOICE':'TYPE YOUR ANSWER')+'</span><span>QUESTION '+(questionIndex+1)+' / '+items.length+'</span>'+(timed?'<strong class="quiz-clock" id="scienceMatchClock">'+timerText()+'</strong>':'')+'</div>'+practiceProgressBar(questionIndex+1,items.length)+
+   '<h2>Complete the statement.</h2><blockquote class="gap-quote">'+practiceSafe(c.masked)+'</blockquote><p class="muted">'+practiceSafe(c.topic)+'</p>'+ui+'<div id="scienceGapFeedback" aria-live="polite"></div><div class="match-play-footer"><button id="scienceGapSkip">Skip</button></div></section>');
+  area.querySelectorAll('[data-sci-gap-answer]').forEach(b=>b.onclick=()=>checkGap(b.dataset.sciGapAnswer));
+  $('scienceGapSubmit')?.addEventListener('click',() =>checkGap($('scienceGapTyped').value));
+  $('scienceGapTyped')?.addEventListener('keydown',e=>{if(e.key==='Enter')checkGap($('scienceGapTyped').value)});
+  $('scienceGapSkip').onclick=()=>{attempts.push({topic:c.topic,statement:c.back,correct:false,expected:c.missing});nextGap()};
+ }
+ function checkGap(answer){
+  const c=items[questionIndex];if(attempts.some(x=>x.statement===c.back))return;
+  const normal=v=>String(v||'').toLowerCase().replace(/[^\w]/g,'').trim(),ok=normal(answer)===normal(c.missing);if(ok)score++;
+  attempts.push({topic:c.topic,statement:c.back,answer:String(answer||''),correct:ok,expected:c.missing});
+  area.querySelectorAll('[data-sci-gap-answer]').forEach(b=>b.disabled=true);if($('scienceGapSubmit'))$('scienceGapSubmit').disabled=true;
+  $('scienceGapFeedback').innerHTML='<p class="'+(ok?'rev-good':'rev-wrong')+'">'+(ok?'Correct.':'The missing word was '+practiceSafe(c.missing)+'.')+'</p><p>'+practiceSafe(c.back)+'</p><button id="scienceGapNext" class="primary">Next →</button>';$('scienceGapNext').onclick=nextGap;
+ }
+ function nextGap(){questionIndex++;if(questionIndex>=items.length)finishGaps(false);else drawGap()}
+ function finishGaps(timeUp){
+  stopTimer();const accuracy=items.length?Math.round(score/items.length*100):0;
+  const detail='<div class="practice-result-grid"><div><b>'+score+'</b><span>Correct gaps</span></div><div><b>'+Math.max(0,items.length-score)+'</b><span>To revisit</span></div><div><b>'+accuracy+'%</b><span>Accuracy</span></div></div><div class="quiz-detailed-review"><h3>Science statement review</h3>'+attempts.map(x=>'<article><span>'+(x.correct?'CORRECT':'REVIEW')+'</span><b>'+practiceSafe(x.topic)+'</b><p>'+practiceSafe(x.statement)+'</p><small>Missing word: '+practiceSafe(x.expected)+'</small></article>').join('')+'</div><p>'+(timeUp?'Time is up. ':'')+'Your statements and missed words are listed for review.</p>';
+  scienceActivityAward(rapid?'Rapid-fire':'Fill the Gaps',score,items.length,detail,started,scienceMatchGaps);
+ }
+ renderSetup();
+}
+function scienceExplainIt(){
+ const data=scienceActivityData(),started=Date.now(),uid=user?.id||'local',weakStore=practiceReadStore('rc-science-progression-weak-'+uid);
+ let current=null,stage=0,ratings={},notes={};
+ const steps=[
+  {id:'knowledge',title:'Secure the knowledge',prompt:'State the relevant scientific fact or principle accurately.',model:t=>t.notes.join(' ')},
+  {id:'terms',title:'Use precise terminology',prompt:'Which scientific terms are essential to this explanation? Define them accurately.',model:t=>t.terms.join(' ')},
+  {id:'application',title:'Apply the science',prompt:'Apply the scientific idea directly to the situation or example.',model:t=>t.exam},
+  {id:'reasoning',title:'Build the reasoning',prompt:'Link each stage of your explanation and finish with a clear scientific conclusion.',model:t=>t.mark}
+ ];
+ function renderStart(){
+  practiceMount(practiceHeader('Explain It / Progression','Build a complete scientific explanation in four steps. Recall first, reveal second, then assess your understanding.')+
+   '<section class="progression-start"><div><span class="rev-kicker">BUILD A STRONGER SCIENCE ANSWER</span><h2>Knowledge → Terminology → Application → Reasoning</h2><p>One step at a time. Your results will show exactly which part of your scientific explanation needs more practice.</p></div><label>Choose a topic<select id="scienceProgressionTopic" class="field">'+data.group.topics.map(t=>'<option value="'+practiceSafe(t.id)+'" '+(t.id===data.topics[0].id?'selected':'')+'>'+practiceSafe(t.title)+'</option>').join('')+'</select></label><div class="progression-preview">'+steps.map((x,i)=>'<div><span>0'+(i+1)+'</span><b>'+practiceSafe(x.title)+'</b><small>'+practiceSafe(x.prompt)+'</small></div>').join('')+'</div><button id="scienceProgressionStart" class="primary">Start building my answer →</button></section>');
+  $('scienceProgressionStart').onclick=()=>{current=topicFor($('scienceProgressionTopic').value);stage=0;ratings={};notes={};renderStep()};
+ }
+ function renderStep(){
+  const item=steps[stage];
+  practiceMount(practiceHeader('Explain It / '+item.title,'Stage '+(stage+1)+' of 4 · Build your scientific response from memory before revealing the model.')+
+   '<section class="progression-task"><div class="progression-topline"><span class="rev-kicker">SCIENCE ANSWER BUILDER</span><span>'+practiceSafe(current.title)+'</span></div>'+practiceProgressBar(stage+1,steps.length)+
+   '<div class="progression-step-heading"><span>0'+(stage+1)+'</span><div><h2>'+practiceSafe(item.title)+'</h2><p>'+practiceSafe(item.prompt)+'</p></div></div>'+
+   '<div class="progression-quote-context"><span class="rev-kicker">EXAM-STYLE PROMPT</span><blockquote>'+practiceSafe(current.exam)+'</blockquote></div>'+
+   '<label class="progression-recall-label">Your response<textarea id="scienceProgressionDraft" class="field" rows="5" placeholder="Write your scientific explanation in your own words before revealing the model…">'+practiceSafe(notes[item.id]||'')+'</textarea></label>'+
+   '<div class="progression-model-area"><button id="scienceProgressionReveal">Reveal indicative answer points</button><div id="scienceProgressionModel" class="progression-model hidden"><span class="rev-kicker">INDICATIVE ANSWER</span><p>'+practiceSafe(item.model(current))+'</p></div></div>'+
+   '<div class="progression-rating"><span>How secure is this stage?</span><button id="scienceProgressionWeak">Needs more practice</button><button id="scienceProgressionStrong" class="primary">I remembered it</button></div>'+
+   '<div class="progression-navigation"><button id="scienceProgressionPrevious" '+(stage===0?'disabled':'')+'>Previous stage</button><button id="scienceProgressionNext">Continue →</button><span>'+Object.keys(ratings).length+' / 4 stages assessed</span></div></section>');
+  $('scienceProgressionReveal').onclick=()=>{$('scienceProgressionModel').classList.remove('hidden');$('scienceProgressionReveal').textContent='Answer points revealed'};
+  $('scienceProgressionDraft').oninput=()=>{notes[item.id]=$('scienceProgressionDraft').value};
+  $('scienceProgressionWeak').onclick=()=>markStage(false);$('scienceProgressionStrong').onclick=()=>markStage(true);
+  $('scienceProgressionPrevious').onclick=()=>{notes[item.id]=$('scienceProgressionDraft').value;if(stage>0){stage--;renderStep()}};
+  $('scienceProgressionNext').onclick=()=>{notes[item.id]=$('scienceProgressionDraft').value;if(stage===steps.length-1)finishProgression();else{stage++;renderStep()}};
+ }
+ function markStage(secure){
+  notes[steps[stage].id]=$('scienceProgressionDraft').value;ratings[steps[stage].id]=secure;
+  const key=current.id+'|'+steps[stage].id;weakStore[key]=secure?Math.max(0,(weakStore[key]||0)-1):(weakStore[key]||0)+1;if(!weakStore[key])delete weakStore[key];practiceWriteStore('rc-science-progression-weak-'+uid,weakStore);
+  if(stage===steps.length-1)finishProgression();else{stage++;renderStep()}
+ }
+ function finishProgression(){
+  const secure=steps.filter(x=>ratings[x.id]===true),weak=steps.filter(x=>ratings[x.id]===false),accuracy=Math.round(secure.length/steps.length*100);
+  const detail='<div class="practice-result-grid"><div><b>'+secure.length+'</b><span>Secure stages</span></div><div><b>'+weak.length+'</b><span>To revisit</span></div><div><b>'+accuracy+'%</b><span>Confidence score</span></div></div><div class="progression-results-steps">'+steps.map((x,i)=>'<article><span>0'+(i+1)+'</span><div><b>'+practiceSafe(x.title)+'</b><p>'+(ratings[x.id]===true?'Marked secure':ratings[x.id]===false?'Needs more practice':'Not assessed')+'</p>'+(notes[x.id]?'<small>Your note: '+practiceSafe(notes[x.id])+'</small>':'')+'</div><strong>'+(ratings[x.id]===true?'SECURE':ratings[x.id]===false?'REVISIT':'—')+'</strong></article>').join('')+'</div><p>'+(weak.length?'Next time, spend more time on '+weak.map(x=>x.title.toLowerCase()).join(' and ')+'.':'You marked every stage as secure. Keep practising to strengthen recall.')+'</p>';
+  scienceActivityAward('Explain It / Progression',secure.length,steps.length,detail,started,scienceExplainIt);
+ }
+ renderStart();
+}
+
 function practiceExitScience(){practiceStopTimer();document.body.classList.remove('activity-session','immersive','flash-wizard-active');window.rcActivityContext=null;window.currentScienceActivity=null;window.currentScienceActivityName=null;page='scienceRevise';render();window.scrollTo({top:0,behavior:'smooth'})}
 
 function render(){const p=$('page');document.body.classList.toggle('immersive',page==='revise');if(page==='home'){p.innerHTML='<section class="home-intro"><span class="pill">REVISION CLUB · GCSE</span><h2>Welcome back.</h2><p>Choose a subject to start learning.</p></section><section><h3>Your subjects</h3><p class="muted">Pick up where you left off or explore a new subject.</p><div class="hub-grid"><button class="hub-tile learn-tile" data-go="englishHome"><span class="tile-icon">📚</span><span class="tile-title">English</span><span class="tile-copy">Literature &amp; Language</span><span class="tile-arrow">↗</span></button><button class="hub-tile community-tile" data-go="subjects"><span class="tile-icon">➗</span><span class="tile-title">Maths</span><span class="tile-copy">Coming soon</span><span class="tile-arrow">↗</span></button><button class="hub-tile practice-tile" data-go="scienceHome"><span class="tile-icon">🧪</span><span class="tile-title">Science</span><span class="tile-copy">Biology, Chemistry &amp; Physics · AQA</span><span class="tile-arrow">↗</span></button><button class="hub-tile progress-tile" data-go="subjects"><span class="tile-icon">🌍</span><span class="tile-title">Humanities</span><span class="tile-copy">History &amp; Geography · Coming soon</span><span class="tile-arrow">↗</span></button></div></section><section class="card home-lower"><div><span class="pill">STUDENT HUB</span><h3>Stay connected.</h3><p>Meet other students, follow club updates and track your progress.</p></div><div class="row"><button data-go="community">Community</button><button data-go="leaderboard">Leaderboard</button><button data-go="announcements">Club updates</button><button data-go="progress">Overall progress</button></div></section>'}
