@@ -1494,6 +1494,12 @@ body.activity-session #reviseArea .flash-rating{margin-top:0;padding-top:8px}
  .learn-matrix li{line-height:1.4!important}
  body.activity-session #reviseArea .flash-card-stage{height:clamp(250px,calc(100dvh - 350px),560px);min-height:250px}
 }
+
+@media(max-width:760px){body.activity-session #reviseArea .activity-top{position:sticky;top:0;z-index:40;padding:calc(8px + env(safe-area-inset-top)) 0 10px;background:var(--bg);border-bottom:1px solid var(--line)}body.activity-session #reviseArea .activity-exit{min-height:42px;padding:9px 13px;flex-shrink:0}body.activity-session #reviseArea{padding-bottom:calc(24px + env(safe-area-inset-bottom))}}
+body.activity-session #reviseArea .match-selection-hint{font-size:13px;color:var(--muted);margin:10px 0 0}
+body.activity-session #reviseArea .match-play-screen .match-tile{width:100%;min-height:64px;padding:15px 17px;text-align:left;border:1px solid var(--line);border-radius:13px;background:var(--card);color:var(--ink);transition:border-color .15s,background .15s,box-shadow .15s}
+body.activity-session #reviseArea .match-play-screen .match-tile.selected{border:2px solid #315f91;background:color-mix(in srgb,#315f91 11%,var(--card));box-shadow:0 0 0 3px color-mix(in srgb,#315f91 13%,transparent)}
+body.activity-session #reviseArea .match-play-screen .match-tile:focus-visible{outline:3px solid #315f91;outline-offset:3px}
 </style></head><body><div class="wrap"><header><div><h1>Revision Club</h1><div class="muted">Learn your way. Revise together.</div></div><div class="row header-actions"><span id="who" class="pill">Not signed in</span><button id="homeButton" data-page="home">Home</button><button id="updatesButton" data-page="announcements">Announcements</button><button id="adminButton" data-page="admin" class="hidden">Admin</button><button id="theme">Dark mode</button><button id="logout" class="hidden">Log out</button></div></header>
 <section id="auth" class="auth card"><h2>Welcome</h2><p>Create an account or sign in to save your revision and meet friends.</p><label>Email</label><input id="email" class="field" type="email" autocomplete="email"><label>Password</label><input id="password" class="field" type="password" autocomplete="current-password"><label>Username (for sign-up)</label><input id="username" class="field" maxlength="20" placeholder="e.g. QuoteWizard"><div class="row"><button class="primary" id="signup">Sign up</button><button id="login">Log in</button></div><p id="authmsg" aria-live="polite"></p></section>
 <div id="app" class="hidden"><main id="page"></main></div></div>
@@ -1970,17 +1976,16 @@ function practiceQuickQuiz(){
 
 function practiceMatchGaps(){
  const started=Date.now(),area=$('reviseArea'),all=practiceShuffle(practiceDeckData());
- let mode='matching',matchFormat='quote-poem',matchInteraction='tap',gapFormat='typed',rapid=false,timed=false;
+ let mode='matching',matchFormat='quote-poem',gapFormat='typed',rapid=false,timed=false;
  let remaining=180,tick=null,items=[],rightOrder=[],matched=[],selected=null,attempts=[],questionIndex=0,score=0;
  function renderSetup(){
   practiceMount(practiceHeader('Match Up & Fill the Gaps','Choose a matching challenge or fill-the-gap round. Both can be played in rapid-fire mode.')+
    '<section class="match-setup"><span class="rev-kicker">CHOOSE YOUR CHALLENGE</span><h2>Make the connections.</h2><div class="match-mode-grid"><button data-game-mode="matching" class="selected"><b>Match Up</b><small>Pair quotations, methods and contexts with their correct match.</small></button><button data-game-mode="gaps"><b>Fill the Gaps</b><small>Complete exact quotations using typed or multiple-choice answers.</small></button></div>'+
-   '<div class="match-settings-grid"><section id="matchingSettings"><h3>Matching format</h3><label><input type="radio" name="matchFormat" value="quote-poem" checked> Quote → poem</label><label><input type="radio" name="matchFormat" value="method-analysis"> Method → explanation</label><label><input type="radio" name="matchFormat" value="context-poem"> Context → poem</label><label><input type="radio" name="matchFormat" value="theme-quote"> Theme → quotation</label><h3>How do you want to match?</h3><label><input type="radio" name="matchInteraction" value="tap" checked> Tap-to-match</label><label><input type="radio" name="matchInteraction" value="drag"> Drag-and-drop</label></section><section id="gapSettings" class="hidden"><h3>Answer format</h3><label><input type="radio" name="gapFormat" value="typed" checked> Type the missing word</label><label><input type="radio" name="gapFormat" value="choice"> Choose from options</label></section></div>'+
-   '<div class="match-session-options"><label><input type="checkbox" id="matchRapid"> Rapid-fire · 60 seconds</label><label><input type="checkbox" id="matchTimed"> Optional 3-minute timer</label></div><div class="match-setup-footer"><span>Match formats: 4 · Interaction: tap or drag · Gap formats: 2 · XP: 1,200+</span><button class="primary" id="matchStart">Start challenge →</button></div></section>');
+   '<div class="match-settings-grid"><section id="matchingSettings"><h3>Matching format</h3><label><input type="radio" name="matchFormat" value="quote-poem" checked> Quote → poem</label><label><input type="radio" name="matchFormat" value="method-analysis"> Method → explanation</label><label><input type="radio" name="matchFormat" value="context-poem"> Context → poem</label><label><input type="radio" name="matchFormat" value="theme-quote"> Theme → quotation</label><p class="match-selection-hint">Select a box on the left, then select its matching box on the right.</p></section><section id="gapSettings" class="hidden"><h3>Answer format</h3><label><input type="radio" name="gapFormat" value="typed" checked> Type the missing word</label><label><input type="radio" name="gapFormat" value="choice"> Choose from options</label></section></div>'+
+   '<div class="match-session-options"><label><input type="checkbox" id="matchRapid"> Rapid-fire · 60 seconds</label><label><input type="checkbox" id="matchTimed"> Optional 3-minute timer</label></div><div class="match-setup-footer"><span>Match formats: 4 · Selection: tap-to-match · Gap formats: 2 · XP: 1,200+</span><button class="primary" id="matchStart">Start challenge →</button></div></section>');
   area.querySelectorAll('[data-game-mode]').forEach(b=>b.onclick=()=>{mode=b.dataset.gameMode;area.querySelectorAll('[data-game-mode]').forEach(x=>x.classList.toggle('selected',x===b));$('matchingSettings').classList.toggle('hidden',mode!=='matching');$('gapSettings').classList.toggle('hidden',mode!=='gaps')});
   $('matchStart').onclick=()=>{
    matchFormat=area.querySelector('input[name="matchFormat"]:checked')?.value||'quote-poem';
-   matchInteraction=area.querySelector('input[name="matchInteraction"]:checked')?.value||'tap';
    gapFormat=area.querySelector('input[name="gapFormat"]:checked')?.value||'typed';
    rapid=$('matchRapid').checked;timed=rapid||$('matchTimed').checked;remaining=rapid?60:180;
    if(mode==='matching')startMatching();else startGaps();
@@ -2011,7 +2016,7 @@ function practiceMatchGaps(){
   const right=rightOrder.filter(x=>!matched.includes(x.id));
   practiceMount(practiceHeader('Match Up',rapid?'Rapid-fire · match as many pairs as you can.':'Choose one item on the left, then its match on the right.')+
    '<section class="match-play-screen"><div class="match-play-meta"><span class="rev-kicker">'+matchFormat.replace('-',' → ').toUpperCase()+'</span><span>'+matched.length+' / '+items.length+' pairs matched</span>'+(timed?'<strong class="quiz-clock" id="matchClock">'+timerText()+'</strong>':'')+'</div>'+practiceProgressBar(matched.length,items.length)+
-   '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-match-left="'+x.id+'" '+(matchInteraction==='drag'?'draggable="true"':'')+'>'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="matchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="matchEnd">Finish early</button><button id="matchReset" class="quiet-button">Reset pair selection</button></div></section>');
+   '<div class="match-pair-columns"><div><h3>Match this</h3>'+left.map(x=>'<button class="match-tile '+(selected===x.id?'selected':'')+'" data-match-left="'+x.id+'">'+practiceSafe(x.left)+'</button>').join('')+'</div><div><h3>Find its pair</h3>'+right.map(x=>'<button class="match-tile" data-match-right="'+x.id+'">'+practiceSafe(x.right)+'</button>').join('')+'</div></div><p id="matchStatus" aria-live="polite">'+(selected?'Now select the matching answer.':'Select an item to begin.')+'</p><div class="match-play-footer"><button id="matchEnd">Finish early</button><button id="matchReset" class="quiet-button">Reset pair selection</button></div></section>');
   const tryPair=rightId=>{
    if(!selected){$('matchStatus').textContent='Choose an item on the left first.';return}
    const source=items.find(x=>x.id===selected),success=selected===rightId;
@@ -2021,14 +2026,9 @@ function practiceMatchGaps(){
   };
   area.querySelectorAll('[data-match-left]').forEach(b=>{
    b.onclick=()=>{selected=b.dataset.matchLeft;drawMatching()};
-   if(matchInteraction==='drag')b.ondragstart=e=>{e.dataTransfer.setData('text/plain',b.dataset.matchLeft);e.dataTransfer.effectAllowed='move'};
   });
   area.querySelectorAll('[data-match-right]').forEach(b=>{
    b.onclick=()=>tryPair(b.dataset.matchRight);
-   if(matchInteraction==='drag'){
-    b.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect='move'};
-    b.ondrop=e=>{e.preventDefault();selected=e.dataTransfer.getData('text/plain');tryPair(b.dataset.matchRight)};
-   }
   });
   $('matchEnd').onclick=()=>finishMatching(false);
   $('matchReset').onclick=()=>{selected=null;drawMatching()};
