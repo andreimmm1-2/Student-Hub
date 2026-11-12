@@ -1254,6 +1254,11 @@ body.activity-session #reviseArea .quiz-answer-options>button{min-height:58px;te
 body.activity-session #reviseArea .quiz-answer-options>button:hover{border-color:#315f91;background:rgba(49,95,145,.05)}
 body.activity-session #reviseArea .quiz-binary{grid-template-columns:repeat(2,minmax(0,180px))}
 body.activity-session #reviseArea .quiz-multi-option{display:flex;align-items:flex-start;gap:10px;padding:13px 0;border-bottom:1px solid var(--line);cursor:pointer}
+/* Keep selectable quiz checkboxes comfortably inset from their enclosing card edge. */
+body.activity-session #reviseArea .quiz-multi-option{padding:13px 14px;margin:0 2px;box-sizing:border-box;border-radius:10px}
+body.activity-session #reviseArea .quiz-multi-option input{flex:0 0 auto;margin:4px 2px 0 0}
+body.activity-session #reviseArea .quiz-format-list label{padding:11px 12px;box-sizing:border-box;border-radius:9px}
+body.activity-session #reviseArea .quiz-format-list input{flex:0 0 auto;margin-left:2px}
 body.activity-session #reviseArea .quiz-multi-option input{accent-color:#315f91;margin-top:4px}
 body.activity-session #reviseArea .quiz-gap-answer{display:flex;align-items:center;gap:10px;max-width:650px}
 body.activity-session #reviseArea .quiz-gap-answer .field{flex:1}
