@@ -3010,8 +3010,12 @@ supabase.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
   menu.style.top=(above?Math.max(10,r.top-gap-height):Math.min(innerHeight-height-10,r.bottom+gap))+'px';
  }
  function close(host,focus=false){
-  if(!host)return;const trigger=host.querySelector('.custom-select-trigger'),menu=host.querySelector('.custom-select-menu');
-  trigger?.setAttribute('aria-expanded','false');menu?.remove();openMenus.delete(host);if(focus)trigger?.focus();
+  if(!host)return;
+  const trigger=host.querySelector('.custom-select-trigger'),menu=document.getElementById(host.dataset.menuId);
+  trigger?.setAttribute('aria-expanded','false');
+  menu?.remove();
+  openMenus.delete(host);
+  if(focus)trigger?.focus();
  }
  function open(host){
   const select=host.querySelector('select'),trigger=host.querySelector('.custom-select-trigger');if(!select||select.disabled)return;
@@ -3032,6 +3036,10 @@ supabase.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
   select.addEventListener('change',()=>sync(select));sync(select);
  }
  document.addEventListener('click',e=>{for(const h of [...openMenus])if(!h.contains(e.target)&&!document.getElementById(h.dataset.menuId)?.contains(e.target))close(h)});
+ // A fixed-position menu must close when its anchor is scrolled away.
+ document.addEventListener('scroll',()=>{for(const h of [...openMenus])close(h)},true);
+ window.addEventListener('resize',()=>{for(const h of [...openMenus])close(h)});
+
  document.addEventListener('keydown',e=>{
   const host=[...openMenus].find(h=>document.getElementById(h.dataset.menuId)?.contains(document.activeElement));if(!host)return;
   const menu=document.getElementById(host.dataset.menuId),items=[...menu.querySelectorAll('button:not(:disabled)')],i=items.indexOf(document.activeElement);
