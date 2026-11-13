@@ -1693,7 +1693,7 @@ function scienceDiagramSvg(t){
  return frame(body,caption);
 }
 function scienceLessonCard(subject,t,index){
- const practicalGuides=(t.practicalGuides||[]).filter(g=>window.scienceCourse==='triple'||!String(g.course||'').toLowerCase().includes('only')).map((g,i)=>'<details class="science-practical-guide" '+(i===0?'open':'')+'><summary><span class="science-practical-number">'+(typeof g.number==='number'?'RP '+g.number:g.number)+'</span><span><b>'+escape(g.title)+'</b><small>'+escape(g.course)+'</small></span></summary><div class="science-practical-content"><section><b>Aim</b><p>'+escape(g.aim)+'</p></section><section><b>Method</b><ol>'+g.method.split('. ').filter(Boolean).map(x=>'<li>'+escape(x.replace(/[.]$/,''))+'</li>').join('')+'</ol></section><section><b>Variables</b><p>'+escape(g.variables)+'</p></section><section><b>Results and analysis</b><p>'+escape(g.analysis)+'</p></section><section><b>Evaluation and improvements</b><p>'+escape(g.evaluate)+'</p></section><section><b>Safety</b><p>'+escape(g.safety)+'</p></section></div></details>').join('');
+ const practicalGuides=(t.practicalGuides||[]).filter(g=>window.scienceCourse==='triple'||!String(g.course||'').toLowerCase().includes('only')).map((g,i)=>'<details class="science-practical-guide" '+(i===0?'open':'')+'><summary><span class="science-practical-number">'+(typeof g.number==='number'?'RP '+g.number:g.number)+'</span><span><b>'+escape(g.title)+'</b><small>'+escape(g.course)+'</small></span></summary><div class="science-practical-content"><section><b>Aim</b><p>'+escape(g.aim)+'</p></section><section><b>Method</b><ol>'+g.method.split('. ').filter(Boolean).map(x=>'<li>'+escape(x.replace(/[.]$/,''))+'</li>').join('')+'</ol></section><section><b>Variables</b><p>'+escape(g.variables)+'</p></section><section><b>Results and analysis</b><p>'+escape(g.analysis)+'</p></section><section><b>Evaluation and improvements</b><p>'+escape(g.evaluate)+'</p></section><section><b>Safety</b><p>'+escape(g.safety)+'</p></section>'+(g.diagram?'<section><b>Apparatus diagram</b><div class="science-diagram-wrap">'+g.diagram+'</div></section>':'')+(g.extra?'<section><b>Further explanation and exam focus</b><p>'+escape(g.extra)+'</p></section>':'')+'</div></details>').join('');
 
  const extraExam=(t.examQuestions||[]).map((q,j)=>'<div class="science-check-card science-exam-question"><b>Further exam practice · '+(j+1)+'</b><p>'+escape(q.question)+'</p><button type="button" data-sci-check="exam-extra" data-sci-subject="'+subject+'" data-sci-topic="'+t.id+'" data-sci-index="'+j+'">Reveal mark points</button><div id="scienceExamPoints-'+t.id+'-'+j+'" class="hidden"><p>'+escape(q.marks)+'</p></div></div>').join('');
 
@@ -3060,7 +3060,7 @@ supabase.auth.onAuthStateChange(()=>setTimeout(refresh,0));refresh();
  if(document.readyState!=='loading'){scan(document);observer.observe(document.body,{childList:true,subtree:true})}
  window.addEventListener('resize',()=>openMenus.forEach(position));window.addEventListener('scroll',()=>openMenus.forEach(position),true);
 })();
-</script></body></html>
+</script><script src="science-practicals.js"></script></body></html>
 <style>
 
 /* Light-theme contrast repair: retain dark surfaces wherever headings/cards use white text. */
